@@ -1,3 +1,14 @@
+// ==============================================================================
+// Node.js 24+ Compatibility Polyfill for legacy buffer-equal-constant-time / jwa
+// ==============================================================================
+const buffer = require("buffer");
+if (!buffer.SlowBuffer) {
+  buffer.SlowBuffer = buffer.Buffer;
+}
+if (buffer.SlowBuffer && !buffer.SlowBuffer.prototype) {
+  buffer.SlowBuffer.prototype = buffer.Buffer.prototype;
+}
+
 const { join, resolve } = require("path");
 const express = require("express");
 const ejs = require("ejs");
@@ -24,8 +35,8 @@ const utils = require(resolve(join(__dirname, "app/helper", "utils")));
 const getPort = process.env.PORT || appConfig.appRoot.port || 3002;
 const getHost = process.env.HOST || appConfig.appRoot.host || "0.0.0.0";
 const isProduction = process.env.NODE_ENV === "production" || appConfig.appRoot.isProd;
-const getApiFolderName = appConfig.appRoot.getApiFolderName || "api";
-const getAdminFolderName = appConfig.appRoot.getAdminFolderName || "admin";
+const getApiFolderName = process.env.API_FOLDER_NAME || appConfig.appRoot.getApiFolderName || "api";
+const getAdminFolderName = process.env.ADMIN_FOLDER_NAME || appConfig.appRoot.getAdminFolderName || "admin";
 
 // ******************** Global Function to Generate URLs for named routes ***********************
 global.generateUrl = generateurl = (routeName, routeParams = {}) => {
@@ -128,57 +139,43 @@ const onError = (error) => {
 
 (async () => {
   try {
-    console.log("STEP 1: Connecting to MongoDB...");
     await connectDB();
-    console.log("STEP 1 SUCCESS");
 
-    console.log("STEP 2: Loading API routes...");
+    // ************** API Routes ****************
     const apiFolderPath = resolve(join(__dirname, "app/router", getApiFolderName));
     const apiFiles = await utils._readdir(apiFolderPath);
-
-    console.log("API Files:", apiFiles);
-
     apiFiles.forEach((file) => {
-      if (!file || path.basename(file).startsWith(".")) return;
-
-      console.log("Loading API route:", file);
+      if (!file || path.basename(file).startsWith(".") || !file.endsWith(".js")) return;
       namedRouter.use("/api", require(file));
     });
 
-    console.log("STEP 2 SUCCESS");
-
-    console.log("STEP 3: Loading Admin routes...");
+    // ************** Admin Routes ****************
     const adminFolderPath = resolve(join(__dirname, "app/router", getAdminFolderName));
     const adminFiles = await utils._readdir(adminFolderPath);
-
-    console.log("Admin Files:", adminFiles);
-
     adminFiles.forEach((file) => {
-      if (!file || path.basename(file).startsWith(".")) return;
-
-      console.log("Loading Admin route:", file);
+      if (!file || path.basename(file).startsWith(".") || !file.endsWith(".js")) return;
       namedRouter.use("/", require(file));
     });
 
-    console.log("STEP 3 SUCCESS");
-
-    console.log("STEP 4: Building route table...");
+    // Building Route Table for Named Routes
     namedRouter.buildRouteTable();
 
-    console.log("STEP 4 SUCCESS");
+    if (!isProduction && process.env.SHOW_NAMED_ROUTES === "true") {
+      const apiRouteList = namedRouter.getRouteTable("/api");
+      const userRouteList = namedRouter.getRouteTable("/");
+      console.log("API Routes:", apiRouteList);
+      console.log("User Routes:", userRouteList);
+    }
 
-    console.log("STEP 5: Starting Express server...");
-
-    const server = app.listen(getPort, "0.0.0.0", () => {
-      console.log(`Backend running on port ${getPort}`);
+    // ************ Server Setup ***********
+    const server = app.listen(Number(getPort) || 3002, "0.0.0.0", () => {
+      console.log(`Backend is running on http://${getHost}:${getPort}`);
     });
 
     server.on("error", onError);
-
   } catch (err) {
-    console.error("APPLICATION STARTUP FAILED");
-    console.error(err);
+    console.error("Application startup failed:", err.message);
     console.error(err.stack);
-    process.exitCode = 1;
+    process.exit(1);
   }
 })();

@@ -2,15 +2,15 @@
   "name": "jobseeker-backend",
   "version": "1.0.0",
   "description": "JobSeeker Node.js & Express Backend API and Admin Dashboard",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "node -e \"console.log('No build required for JavaScript')\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x",
+    "npm": ">=9.0.0"
   },
   "author": "",
   "license": "ISC",
@@ -33,7 +33,7 @@
     "nodemon": "^3.1.9",
     "route-label": "^1.2.3"
   },
-  "devDependencies": {
-    "esbuild": "^0.28.2"
+  "overrides": {
+    "jwa": "^2.0.0"
   }
 }
