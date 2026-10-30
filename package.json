@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "npx esbuild index.js --bundle --platform=node --target=node18 --packages=external --outfile=dist/index.js",
+    "build": "node -e \"console.log('No build required for JavaScript')\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {

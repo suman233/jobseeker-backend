@@ -128,44 +128,57 @@ const onError = (error) => {
 
 (async () => {
   try {
+    console.log("STEP 1: Connecting to MongoDB...");
     await connectDB();
+    console.log("STEP 1 SUCCESS");
 
-    // ************** API Routes ****************
+    console.log("STEP 2: Loading API routes...");
     const apiFolderPath = resolve(join(__dirname, "app/router", getApiFolderName));
     const apiFiles = await utils._readdir(apiFolderPath);
+
+    console.log("API Files:", apiFiles);
+
     apiFiles.forEach((file) => {
       if (!file || path.basename(file).startsWith(".")) return;
+
+      console.log("Loading API route:", file);
       namedRouter.use("/api", require(file));
     });
 
-    // ************** Admin Routes ****************
+    console.log("STEP 2 SUCCESS");
+
+    console.log("STEP 3: Loading Admin routes...");
     const adminFolderPath = resolve(join(__dirname, "app/router", getAdminFolderName));
     const adminFiles = await utils._readdir(adminFolderPath);
+
+    console.log("Admin Files:", adminFiles);
+
     adminFiles.forEach((file) => {
       if (!file || path.basename(file).startsWith(".")) return;
+
+      console.log("Loading Admin route:", file);
       namedRouter.use("/", require(file));
     });
 
-    // Building Route Table for Debugging
+    console.log("STEP 3 SUCCESS");
+
+    console.log("STEP 4: Building route table...");
     namedRouter.buildRouteTable();
 
-    if (!isProduction && process.env.SHOW_NAMED_ROUTES === "true") {
-      const apiRouteList = namedRouter.getRouteTable("/api");
-      const userRouteList = namedRouter.getRouteTable("/");
+    console.log("STEP 4 SUCCESS");
 
-      console.log("Route Tables:");
-      console.log("API Routes:", apiRouteList);
-      console.log("User Routes:", userRouteList);
-    }
+    console.log("STEP 5: Starting Express server...");
 
-    // ************ Server Setup ***********
-    const server = app.listen(getPort, () => {
-      console.log(`Backend is running on http://${getHost}:${getPort}`);
+    const server = app.listen(getPort, "0.0.0.0", () => {
+      console.log(`Backend running on port ${getPort}`);
     });
 
     server.on("error", onError);
+
   } catch (err) {
-    console.error("Application startup failed:", err.message);
+    console.error("APPLICATION STARTUP FAILED");
+    console.error(err);
+    console.error(err.stack);
     process.exitCode = 1;
   }
 })();

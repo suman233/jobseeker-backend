@@ -1,31 +1,64 @@
-const { stat, readdir } = require("fs/promises");
+// const { stat, readdir } = require("fs/promises");
+// const { join } = require("path");
+
+// // Define Utils Object
+// const utils = {
+//   isDirectory: async (filePath) => {
+//     const fileStats = await stat(filePath);
+
+//     return fileStats.isDirectory();
+//   },
+
+//   _readdir: async (filePath) => {
+//     const files = await readdir(filePath);
+
+//     const fileDetails = await Promise.all(
+//       files.map(async (file) => {
+//         const fullPath = join(filePath, file);
+
+//         const isDir = await utils.isDirectory(fullPath);
+
+//         if (isDir) {
+//           return utils._readdir(fullPath);
+//         } else {
+//           return fullPath;
+//         }
+//       })
+//     );
+//     return fileDetails.flat();
+//   },
+// };
+
+// module.exports = utils;
+
+const { readdir } = require("fs/promises");
 const { join } = require("path");
 
-// Define Utils Object
 const utils = {
-  isDirectory: async (filePath) => {
-    const fileStats = await stat(filePath);
+  _readdir: async (folderPath) => {
+    const entries = await readdir(folderPath, {
+      withFileTypes: true,
+    });
 
-    return fileStats.isDirectory();
-  },
+    const results = await Promise.all(
+      entries
+        .filter((entry) => !entry.name.startsWith("."))
+        .map(async (entry) => {
+          const fullPath = join(folderPath, entry.name);
 
-  _readdir: async (filePath) => {
-    const files = await readdir(filePath);
+          if (entry.isDirectory()) {
+            return utils._readdir(fullPath);
+          }
 
-    const fileDetails = await Promise.all(
-      files.map(async (file) => {
-        const fullPath = join(filePath, file);
+          if (entry.isFile() && entry.name.endsWith(".js")) {
+            return fullPath;
+          }
 
-        const isDir = await utils.isDirectory(fullPath);
-
-        if (isDir) {
-          return utils._readdir(fullPath);
-        } else {
-          return fullPath;
-        }
-      })
+          return [];
+        })
     );
-    return fileDetails.flat();
+
+    return results.flat();
   },
 };
 
