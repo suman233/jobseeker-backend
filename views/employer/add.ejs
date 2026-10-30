@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<%-include('../common/head')%>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+  <!-- Navbar -->
+  <%-include('../common/navbar')%>
+  <!-- /.navbar -->
+
+  <!-- Main Sidebar Container -->
+  <%-include('../common/sidebar')%>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <!-- <h1>Add Employer</h1> -->
+          </div>
+          <!-- <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item active">Add Employer</li>
+            </ol>
+          </div> -->
+        </div>
+      </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+          <!-- left column -->
+          <div class="col-md-12">
+            <!-- general form elements -->
+            <div class="card card-primary">
+              <div class="card-header">
+                <h3 class="card-title">Add Employer</h3>
+              </div>
+              <!-- /.card-header -->
+              <!-- form start -->
+              <form action="<%= generateUrl('employer-register')%>" method="post" enctype="multipart/form-data">
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" class="form-control" id="fullName" placeholder="Enter full name" name="name" minlength="3" maxlength="30" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="userEmail">Email address</label>
+                    <input type="email" class="form-control" id="userEmail" placeholder="Enter email" name="email" required>
+                  </div>
+                  <fieldset class="form-group">
+                    <legend class="col-form-label pt-0">User type</legend>
+                    <div class="custom-control custom-radio">
+                      <input class="custom-control-input" type="radio" id="roleEmployer" name="role" value="employer" checked>
+                      <label class="custom-control-label" for="roleEmployer">Employer</label>
+                    </div>
+                    <div class="custom-control custom-radio">
+                      <input class="custom-control-input" type="radio" id="roleJobSeeker" name="role" value="jobSeeker">
+                      <label class="custom-control-label" for="roleJobSeeker">Job seeker</label>
+                    </div>
+                  </fieldset>
+                  <div class="form-group">
+                    <label for="exampleInputFile">File input</label>
+                    <div class="input-group">
+                      <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="exampleInputFile" name="image">
+                        <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                      </div>
+                      <div class="input-group-append">
+                        <span class="input-group-text">Upload</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- /.card-body -->
+
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+              </form>
+            </div>
+            <!-- /.card -->
+
+          </div>
+          <!--/.col (left) -->
+        </div>
+        <!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </section>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+  <%-include('../common/footer')%>
+</body>
+</html>

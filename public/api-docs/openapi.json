@@ -1,0 +1,228 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "JobSeeker API and Web Routes",
+    "version": "1.0.0",
+    "description": "API and form-backed routes exposed by the JobSeeker application. API routes return JSON; browser form routes generally redirect after processing."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current JobSeeker server"
+    }
+  ],
+  "tags": [
+    { "name": "Authentication API", "description": "JSON authentication endpoints" },
+    { "name": "Admin authentication", "description": "Admin login and admin account registration forms" },
+    { "name": "User authentication", "description": "Employer and job seeker login forms" },
+    { "name": "Admin users", "description": "Admin pages and account creation form" }
+  ],
+  "paths": {
+    "/api/user-login": {
+      "post": {
+        "tags": ["Authentication API"],
+        "summary": "Log in through the JSON API",
+        "description": "Authenticates an account in the shared users collection and returns a JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "example": { "email": "person@example.com", "password": "your-password" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login succeeded",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginSuccess" } } }
+          },
+          "400": {
+            "description": "Required fields are missing, account was not found, or credentials are invalid",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/admin/login": {
+      "get": {
+        "tags": ["Admin authentication"],
+        "summary": "Show the admin login page",
+        "responses": { "200": { "description": "Admin login HTML page" } }
+      },
+      "post": {
+        "tags": ["Admin authentication"],
+        "summary": "Sign in as an admin",
+        "description": "Accepts an HTML form, verifies that the account role is admin, sets the adminToken cookie, and redirects to the admin employer page.",
+        "requestBody": { "required": true, "content": { "application/x-www-form-urlencoded": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": {
+          "302": { "description": "Redirects to /employer on success or /admin/login with an error toast on failure", "headers": { "Location": { "schema": { "type": "string" } }, "Set-Cookie": { "schema": { "type": "string" }, "description": "HttpOnly adminToken cookie on success" } } }
+        }
+      }
+    },
+    "/admin/register": {
+      "get": {
+        "tags": ["Admin authentication"],
+        "summary": "Show the admin registration page",
+        "responses": { "200": { "description": "Admin registration HTML page" } }
+      },
+      "post": {
+        "tags": ["Admin authentication"],
+        "summary": "Register an admin account",
+        "description": "Creates an admin account in the shared users collection. Passwords are hashed before storage.",
+        "requestBody": { "required": true, "content": { "application/x-www-form-urlencoded": { "schema": { "$ref": "#/components/schemas/AdminRegistrationRequest" } } } },
+        "responses": {
+          "302": { "description": "Redirects to /admin/login after success, or /admin/register with an error toast" }
+        }
+      }
+    },
+    "/admin/logout": {
+      "get": {
+        "tags": ["Admin authentication"],
+        "summary": "Sign out the admin browser session",
+        "responses": { "302": { "description": "Clears the adminToken cookie and redirects to /admin/login" } }
+      }
+    },
+    "/login": {
+      "get": {
+        "tags": ["User authentication"],
+        "summary": "Show the employer or job seeker login page",
+        "responses": { "200": { "description": "User login HTML page" } }
+      },
+      "post": {
+        "tags": ["User authentication"],
+        "summary": "Sign in as an employer or job seeker",
+        "description": "Accepts an HTML form, sets the userToken cookie, and redirects to /account.",
+        "requestBody": { "required": true, "content": { "application/x-www-form-urlencoded": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": { "302": { "description": "Redirects to /account on success, or /login with an error toast" } }
+      }
+    },
+    "/user/logout": {
+      "get": {
+        "tags": ["User authentication"],
+        "summary": "Sign out a user",
+        "responses": { "302": { "description": "Clears the userToken cookie and redirects to /login" } }
+      }
+    },
+    "/account": {
+      "get": {
+        "tags": ["User authentication"],
+        "summary": "Show the signed-in user's account page",
+        "security": [{ "userCookie": [] }],
+        "responses": { "200": { "description": "Account page HTML" }, "302": { "description": "Redirects to /login if the user is not signed in" } }
+      }
+    },
+    "/employer": {
+      "get": {
+        "tags": ["Admin users"],
+        "summary": "List employer accounts",
+        "security": [{ "adminCookie": [] }],
+        "responses": { "200": { "description": "Employer list HTML page" }, "302": { "description": "Redirects to /admin/login if the admin is not signed in" } }
+      }
+    },
+    "/employer-add": {
+      "get": {
+        "tags": ["Admin users"],
+        "summary": "Show the admin create-user form",
+        "description": "The form supports Employer and Job Seeker roles.",
+        "security": [{ "adminCookie": [] }],
+        "responses": { "200": { "description": "Create-user HTML page" }, "302": { "description": "Redirects to /admin/login if the admin is not signed in" } }
+      }
+    },
+    "/employer-registration": {
+      "post": {
+        "tags": ["Admin users"],
+        "summary": "Create an employer or job seeker account",
+        "description": "Admin-only HTML form endpoint. Generates a password, stores the password hash in the users collection, and emails the generated credentials. If email delivery fails, the new record is deleted.",
+        "security": [{ "adminCookie": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": { "$ref": "#/components/schemas/CreateUserRequest" }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": { "$ref": "#/components/schemas/CreateUserRequest" }
+            }
+          }
+        },
+        "responses": {
+          "302": { "description": "Redirects to /employer with a success or error toast" },
+          "401": { "description": "Redirects to /admin/login if the admin is not signed in" }
+        }
+      }
+    },
+    "/job-seeker": {
+      "get": {
+        "tags": ["Admin users"],
+        "summary": "List job seeker accounts",
+        "security": [{ "adminCookie": [] }],
+        "responses": { "200": { "description": "Job seeker list HTML page" }, "302": { "description": "Redirects to /admin/login if the admin is not signed in" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "adminCookie": { "type": "apiKey", "in": "cookie", "name": "adminToken" },
+      "userCookie": { "type": "apiKey", "in": "cookie", "name": "userToken" }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "format": "password" }
+        }
+      },
+      "AdminRegistrationRequest": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string", "minLength": 3, "maxLength": 30 },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "format": "password", "minLength": 8 }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": ["name", "email", "role"],
+        "properties": {
+          "name": { "type": "string", "minLength": 3, "maxLength": 30 },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string", "enum": ["employer", "jobSeeker"] },
+          "image": { "type": "string", "format": "binary", "description": "Optional PNG or JPEG profile image" }
+        }
+      },
+      "LoginSuccess": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "User logged in successfully." },
+          "user": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "email": { "type": "string", "format": "email" },
+              "role": { "type": "string", "enum": ["admin", "employer", "jobSeeker"] },
+              "image": { "type": "string", "nullable": true }
+            }
+          },
+          "token": { "type": "string", "description": "JWT access token" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "boolean", "example": false },
+          "message": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}

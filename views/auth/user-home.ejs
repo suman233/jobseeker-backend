@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Account | JobSeeker</title><link href="/css/app.css" rel="stylesheet" /></head>
+  <body class="bg-light">
+    <main class="container py-5">
+      <div class="card mx-auto" style="max-width: 640px"><div class="card-body p-5">
+        <h1 class="h2">Welcome, <%= user.name %></h1>
+        <p>You are signed in as <strong><%= user.role === "jobSeeker" ? "Job Seeker" : "Employer" %></strong>.</p>
+        <p class="text-muted"><%= user.email %></p>
+        <a class="btn btn-primary" href="<%= generateUrl('user-logout') %>">Sign out</a>
+      </div></div>
+    </main>
+  </body>
+</html>

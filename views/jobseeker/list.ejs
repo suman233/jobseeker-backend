@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%-include('../common/head')%>
+  <body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+      <!-- Navbar -->
+      <%-include('../common/navbar') %>
+      <!-- /.navbar -->
+
+      <!-- Main Sidebar Container -->
+      <%-include('../common/sidebar')%>
+
+      <!-- Content Wrapper. Contains page content -->
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <div class="container-fluid">
+            <div class="row mb-2">
+              <div class="col-sm-6">
+                <h1>Job Seeker</h1>
+              </div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                  <li class="breadcrumb-item"><a href="#">Home</a></li>
+                  <li class="breadcrumb-item active">Job Seeker</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          <!-- /.container-fluid -->
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">Job Seeker List</h3>
+                        <a href="<%= generateUrl('employer-add')%>" class="btn btn-info ms-auto">Add User</a>
+                      </div>
+                  <!-- /.card-header -->
+                  <div class="card-body">
+                    <table
+                      id="example2"
+                      class="table table-bordered table-hover"
+                    >
+                      <thead>
+                        <tr>
+                          <th>Sl. No.</th>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th>Registered</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% let serialNo=1%>
+                        <%for(let item of data){%>
+                            <tr>
+                                <td><%= serialNo %></td>
+                                <td><strong><%= item.name%></strong></td>
+                                <td><%= item.email%></td>
+                                <td><span class="badge badge-info"><%= item.role ? (item.role.charAt(0).toUpperCase() + item.role.slice(1)) : 'JobSeeker' %></span></td>
+                                <td>
+                                  <% if (item.isEmailVerified) { %>
+                                    <span class="badge badge-success" style="background-color: #28a745; color: #fff; padding: 5px 8px; border-radius: 4px;">Verified</span>
+                                  <% } else { %>
+                                    <span class="badge badge-warning" style="background-color: #ffc107; color: #000; padding: 5px 8px; border-radius: 4px;">Pending OTP</span>
+                                  <% } %>
+                                </td>
+                                <td><%= item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A' %></td>
+                                <td>
+                                    <a
+                                      href=""
+                                      class="btn btn-sm btn-success"
+                                      >Update</a
+                                    >
+                                    <a
+                                      href=""
+                                      class="btn btn-sm btn-danger"
+                                      >Delete</a
+                                    >
+                                  </td>
+                                  
+                              </tr>
+                              <% serialNo++; %>
+                            <%}%>
+                        
+                      </tbody>
+                    </table>
+                  </div>
+                  <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+              </div>
+              <!-- /.col -->
+            </div>
+            <!-- /.row -->
+          </div>
+          <!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+      </div>
+      <!-- /.content-wrapper -->
+      <%-include('../common/footer')%>
+
+      <!-- Control Sidebar -->
+      <aside class="control-sidebar control-sidebar-dark">
+        <!-- Control sidebar content goes here -->
+      </aside>
+      <!-- /.control-sidebar -->
+    </div>
+    <!-- ./wrapper -->
+  </body>
+</html>

@@ -1,0 +1,401 @@
+const jwt = require("jsonwebtoken");
+const SECRET_KEY =
+  process.env.JWT_ACCESS_TOKEN_SECRET_KEY || "jobseeker_jwt_secret_key_2026";
+const {
+  comparePassword,
+  hashPassword,
+  generateRandomPassword,
+} = require("../../helper/commonHelper");
+const { UserModel } = require("../../module/auth/model/user");
+const { sendOtpEmail } = require("../../helper/sendEmail");
+
+class UserController {
+  /**
+   * User Registration / Sign Up
+   * Frontend user signs up -> frontendUser: true, isEmailVerified: false
+   * Generates 6-digit OTP, sends to user's email.
+   */
+  async registerUser(req, res) {
+    try {
+      const { name, email, password, role, image } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          status: false,
+          message: "Email is required.",
+        });
+      }
+
+      if (!password || String(password).length < 6) {
+        return res.status(400).json({
+          status: false,
+          message: "Password is required and must be at least 6 characters.",
+        });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      let existingUser = await UserModel.findOne({ email: normalizedEmail });
+
+      const finalName =
+        (name && String(name).trim()) || normalizedEmail.split("@")[0];
+      const hashedPassword = await hashPassword(String(password));
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      if (existingUser) {
+        if (existingUser.isEmailVerified) {
+          return res.status(400).json({
+            status: false,
+            message: "An account with this email already exists and is verified. Please log in.",
+          });
+        }
+
+        // User previously initiated signup but hasn't verified OTP yet
+        existingUser.name = finalName;
+        existingUser.password = hashedPassword;
+        existingUser.otp = otp;
+        existingUser.otpExpiresAt = otpExpiresAt;
+        existingUser.frontendUser = true;
+        if (role) existingUser.role = role;
+        if (image) existingUser.image = image;
+        await existingUser.save();
+
+        await sendOtpEmail(normalizedEmail, finalName, otp);
+
+        return res.status(200).json({
+          status: true,
+          requireOtp: true,
+          email: normalizedEmail,
+          message: "Account pending verification. A fresh 6-digit verification code has been sent to your email.",
+        });
+      }
+
+      // Create new candidate profile in MongoDB
+      const newUser = await UserModel.create({
+        name: finalName,
+        email: normalizedEmail,
+        password: hashedPassword,
+        role: role || "jobSeeker",
+        image: image || "",
+        frontendUser: true,
+        isEmailVerified: false,
+        otp: otp,
+        otpExpiresAt: otpExpiresAt,
+      });
+
+      console.log(`[AUTH] New candidate registered: ${normalizedEmail} (ID: ${newUser._id})`);
+
+      // Dispatch OTP email
+      await sendOtpEmail(normalizedEmail, finalName, otp);
+
+      return res.status(201).json({
+        status: true,
+        requireOtp: true,
+        email: normalizedEmail,
+        message: "Registration successful! A 6-digit verification code has been sent to your email.",
+      });
+    } catch (err) {
+      console.error("Error in user registration:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error during registration.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Verify Email OTP
+   * Validates OTP and activates user account (isEmailVerified: true)
+   * Returns JWT token on success
+   */
+  async verifyOtp(req, res) {
+    try {
+      const { email, otp } = req.body;
+
+      if (!email || !otp) {
+        return res.status(400).json({
+          status: false,
+          message: "Email and 6-digit OTP code are required.",
+        });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const user = await UserModel.findOne({ email: normalizedEmail });
+
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "No account found with this email.",
+        });
+      }
+
+      if (user.isEmailVerified) {
+        const token = jwt.sign(
+          {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            image: user.image,
+          },
+          SECRET_KEY,
+          { expiresIn: "7d" }
+        );
+
+        return res.status(200).json({
+          status: true,
+          message: "Email is already verified.",
+          token,
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            image: user.image,
+            isEmailVerified: true,
+            createdAt: user.createdAt,
+          },
+        });
+      }
+
+      const inputOtp = String(otp).trim();
+      if (!user.otp || user.otp !== inputOtp) {
+        return res.status(400).json({
+          status: false,
+          message: "Invalid verification code. Please check and try again.",
+        });
+      }
+
+      if (user.otpExpiresAt && new Date() > new Date(user.otpExpiresAt)) {
+        return res.status(400).json({
+          status: false,
+          message: "Verification code has expired. Please click Resend OTP.",
+        });
+      }
+
+      // Mark email as verified and clear OTP
+      user.isEmailVerified = true;
+      user.otp = null;
+      user.otpExpiresAt = null;
+      await user.save();
+
+      const token = jwt.sign(
+        {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image,
+        },
+        SECRET_KEY,
+        { expiresIn: "7d" }
+      );
+
+      console.log(`[AUTH] Candidate email verified successfully: ${normalizedEmail}`);
+
+      return res.status(200).json({
+        status: true,
+        message: "Email verified successfully! Welcome to WorkSphere.",
+        token,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image,
+          isEmailVerified: true,
+          createdAt: user.createdAt,
+        },
+      });
+    } catch (err) {
+      console.error("Error in OTP verification:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error during OTP verification.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Resend Verification OTP
+   */
+  async resendOtp(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          status: false,
+          message: "Email is required.",
+        });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const user = await UserModel.findOne({ email: normalizedEmail });
+
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "No account found with this email.",
+        });
+      }
+
+      if (user.isEmailVerified) {
+        return res.status(400).json({
+          status: false,
+          message: "Your email is already verified. You can log in directly.",
+        });
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.otp = otp;
+      user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await user.save();
+
+      await sendOtpEmail(normalizedEmail, user.name, otp);
+
+      return res.status(200).json({
+        status: true,
+        message: "A new 6-digit verification code has been sent to your email.",
+        email: normalizedEmail,
+      });
+    } catch (err) {
+      console.error("Error in resend OTP:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error while resending OTP.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * User Login with email & password
+   * Blocks unverified frontend users with requireOtp: true
+   */
+  async loginUser(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          status: false,
+          message: "Email is required.",
+        });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const user = await UserModel.findOne({ email: normalizedEmail });
+
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "No account found with this email. Please sign up first.",
+        });
+      }
+
+      if (password) {
+        const isPasswordMatched = await comparePassword(
+          String(password),
+          user.password
+        );
+        if (!isPasswordMatched) {
+          return res.status(400).json({
+            status: false,
+            message: "Invalid credentials. Please check your password.",
+          });
+        }
+      }
+
+      // Check if candidate needs email verification
+      if (user.frontendUser && !user.isEmailVerified) {
+        // Generate new OTP and send
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
+        user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+        await sendOtpEmail(user.email, user.name, otp);
+
+        return res.status(403).json({
+          status: false,
+          requireOtp: true,
+          email: user.email,
+          message: "Please verify your email before logging in. A new verification code has been sent to your email.",
+        });
+      }
+
+      const token = jwt.sign(
+        {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image,
+        },
+        SECRET_KEY,
+        { expiresIn: "7d" }
+      );
+
+      return res.status(200).json({
+        status: true,
+        message: "Logged in successfully.",
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image,
+          isEmailVerified: user.isEmailVerified,
+          createdAt: user.createdAt,
+        },
+        token,
+      });
+    } catch (err) {
+      console.error("Error in user login:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Internal server error! Please try again later!",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Get Current User Profile
+   */
+  async getUserProfile(req, res) {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res
+          .status(401)
+          .json({ status: false, message: "Authorization header required" });
+      }
+
+      const token = authHeader.replace(/^Bearer\s+/, "");
+      const decoded = jwt.verify(token, SECRET_KEY);
+      const user = await UserModel.findById(decoded._id).select("-password -otp -otpExpiresAt");
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ status: false, message: "User not found" });
+      }
+
+      return res.status(200).json({
+        status: true,
+        user,
+      });
+    } catch (err) {
+      return res.status(401).json({
+        status: false,
+        message: "Invalid or expired token.",
+        error: err.message,
+      });
+    }
+  }
+}
+
+module.exports = new UserController();
