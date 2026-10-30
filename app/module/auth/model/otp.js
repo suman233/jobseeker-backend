@@ -29,3 +29,4 @@ const otpSchema = new Schema(
 
 const OtpModel = mongoose.model("email_otp", otpSchema);
 module.exports = { OtpModel };
+
