@@ -7,13 +7,112 @@ const {
   generateRandomPassword,
 } = require("../../helper/commonHelper");
 const { UserModel } = require("../../module/auth/model/user");
+const { OtpModel } = require("../../module/auth/model/otp");
 const { sendOtpEmail } = require("../../helper/sendEmail");
 
 class UserController {
   /**
+   * Send Email OTP for Pre-registration Verification
+   */
+  async sendEmailOtp(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          status: false,
+          message: "Email is required.",
+        });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const emailRegex = /^\S+@\S+\.\S+$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        return res.status(400).json({
+          status: false,
+          message: "Please enter a valid email address.",
+        });
+      }
+
+      const existingUser = await UserModel.findOne({ email: normalizedEmail });
+      if (existingUser && existingUser.isEmailVerified) {
+        return res.status(400).json({
+          status: false,
+          message: "An account with this email already exists and is verified. Please log in.",
+        });
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+      await OtpModel.findOneAndUpdate(
+        { email: normalizedEmail },
+        { otp, isVerified: false, createdAt: new Date() },
+        { upsert: true, new: true }
+      );
+
+      await sendOtpEmail(normalizedEmail, "Candidate", otp);
+
+      return res.status(200).json({
+        status: true,
+        message: "A 6-digit verification code has been sent to your email.",
+        email: normalizedEmail,
+      });
+    } catch (err) {
+      console.error("Error in sendEmailOtp:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to send verification code.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Verify Pre-registration Email OTP
+   */
+  async verifyEmailOtp(req, res) {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return res.status(400).json({
+          status: false,
+          message: "Email and 6-digit OTP code are required.",
+        });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const inputOtp = String(otp).trim();
+
+      const otpDoc = await OtpModel.findOne({ email: normalizedEmail });
+      if (!otpDoc || otpDoc.otp !== inputOtp) {
+        return res.status(400).json({
+          status: false,
+          message: "Invalid verification code. Please check and try again.",
+        });
+      }
+
+      otpDoc.isVerified = true;
+      await otpDoc.save();
+
+      return res.status(200).json({
+        status: true,
+        isVerified: true,
+        message: "Email verified successfully! You can now complete your registration.",
+        email: normalizedEmail,
+      });
+    } catch (err) {
+      console.error("Error in verifyEmailOtp:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to verify code.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
    * User Registration / Sign Up
-   * Frontend user signs up -> frontendUser: true, isEmailVerified: false
-   * Generates 6-digit OTP, sends to user's email.
+   * Supports pre-verified email (sets isEmailVerified: true immediately),
+   * or falls back to post-registration OTP email.
    */
   async registerUser(req, res) {
     try {
@@ -39,8 +138,12 @@ class UserController {
       const finalName =
         (name && String(name).trim()) || normalizedEmail.split("@")[0];
       const hashedPassword = await hashPassword(String(password));
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Check if email was verified beforehand via OTP verification
+      const verifiedOtpDoc = await OtpModel.findOne({
+        email: normalizedEmail,
+        isVerified: true,
+      });
 
       if (existingUser) {
         if (existingUser.isEmailVerified) {
@@ -50,14 +153,41 @@ class UserController {
           });
         }
 
-        // User previously initiated signup but hasn't verified OTP yet
+        // Existing unverified user completing registration
         existingUser.name = finalName;
         existingUser.password = hashedPassword;
-        existingUser.otp = otp;
-        existingUser.otpExpiresAt = otpExpiresAt;
         existingUser.frontendUser = true;
         if (role) existingUser.role = role;
         if (image) existingUser.image = image;
+
+        if (verifiedOtpDoc) {
+          existingUser.isEmailVerified = true;
+          existingUser.otp = null;
+          existingUser.otpExpiresAt = null;
+          await existingUser.save();
+          await OtpModel.deleteMany({ email: normalizedEmail });
+
+          console.log(`[AUTH] Pre-verified candidate updated: ${normalizedEmail}`);
+
+          return res.status(200).json({
+            status: true,
+            isEmailVerified: true,
+            message: "Account created successfully! Please sign in with your email and password.",
+            user: {
+              _id: existingUser._id,
+              name: existingUser.name,
+              email: existingUser.email,
+              role: existingUser.role,
+              isEmailVerified: true,
+            },
+          });
+        }
+
+        // Fallback: send fresh OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        existingUser.otp = otp;
+        existingUser.otpExpiresAt = otpExpiresAt;
         await existingUser.save();
 
         await sendOtpEmail(normalizedEmail, finalName, otp);
@@ -70,7 +200,42 @@ class UserController {
         });
       }
 
-      // Create new candidate profile in MongoDB
+      // If email was pre-verified
+      if (verifiedOtpDoc) {
+        const newUser = await UserModel.create({
+          name: finalName,
+          email: normalizedEmail,
+          password: hashedPassword,
+          role: role || "jobSeeker",
+          image: image || "",
+          frontendUser: true,
+          isEmailVerified: true,
+          otp: null,
+          otpExpiresAt: null,
+        });
+
+        await OtpModel.deleteMany({ email: normalizedEmail });
+
+        console.log(`[AUTH] New pre-verified candidate created: ${normalizedEmail}`);
+
+        return res.status(201).json({
+          status: true,
+          isEmailVerified: true,
+          message: "Account created successfully! Please sign in with your email and password.",
+          user: {
+            _id: newUser._id,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            isEmailVerified: true,
+          },
+        });
+      }
+
+      // Default fallback: create unverified and send OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
       const newUser = await UserModel.create({
         name: finalName,
         email: normalizedEmail,
@@ -85,7 +250,6 @@ class UserController {
 
       console.log(`[AUTH] New candidate registered: ${normalizedEmail} (ID: ${newUser._id})`);
 
-      // Dispatch OTP email
       await sendOtpEmail(normalizedEmail, finalName, otp);
 
       return res.status(201).json({
