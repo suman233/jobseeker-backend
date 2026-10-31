@@ -61,7 +61,14 @@
                         <% for (let item of data) { %>
                           <tr>
                             <td><%= serialNo %></td>
-                            <td><strong><%= item.name %></strong></td>
+                            <td>
+                              <div class="d-flex align-items-center">
+                                <% if (item.image) { %>
+                                  <img src="<%= getImageUrl(item.image) %>" alt="" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; margin-right: 8px; border: 1px solid #dee2e6;" onerror="this.style.display='none'">
+                                <% } %>
+                                <strong><%= item.name %></strong>
+                              </div>
+                            </td>
                             <td><%= item.email %></td>
                             <td><span class="badge badge-primary"><%= item.role ? (item.role.charAt(0).toUpperCase() + item.role.slice(1)) : 'Employer' %></span></td>
                             <td>

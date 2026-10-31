@@ -44,6 +44,11 @@ global.generateUrl = generateurl = (routeName, routeParams = {}) => {
   return url;
 };
 
+// ******************** Image URL Resolver Helper ***********************
+const { getImageUrl } = require("./app/helper/commonHelper");
+global.getImageUrl = getImageUrl;
+app.locals.getImageUrl = getImageUrl;
+
 // ******************* CORS Configuration for Vercel & Local *********************
 const allowedOrigins = [
   process.env.FRONTEND_HOST,

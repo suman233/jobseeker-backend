@@ -5,6 +5,7 @@ const {
   comparePassword,
   hashPassword,
   generateRandomPassword,
+  getUploadedFilePath,
 } = require("../../helper/commonHelper");
 const { UserModel } = require("../../module/auth/model/user");
 const { OtpModel } = require("../../module/auth/model/otp");
@@ -664,7 +665,7 @@ class UserController {
         updateData.password = await hashPassword(password);
       }
       if (req.file) {
-        updateData.image = req.file.path;
+        updateData.image = getUploadedFilePath(req.file);
       }
 
       const updatedUser = await UserModel.findByIdAndUpdate(id, updateData, { new: true }).select("-password -otp -otpExpiresAt");

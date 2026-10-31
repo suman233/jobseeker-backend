@@ -2,7 +2,11 @@ const express = require("express");
 const router = express.Router();
 const routerLabel = require("route-label");
 const { UserModel, UserValidationSchema } = require("../../auth/model/user");
-const { generateRandomPassword, hashPassword } = require("../../../helper/commonHelper");
+const {
+  generateRandomPassword,
+  hashPassword,
+  getUploadedFilePath,
+} = require("../../../helper/commonHelper");
 const namedRouter = routerLabel(router);
 const { sendMailRegistration } = require("../../../helper/sendEmail");
 
@@ -54,7 +58,7 @@ class JobSeekerController {
         name: name,
         email: email,
         password: hashedPassword,
-        image: req?.file ? req.file.path : "",
+        image: getUploadedFilePath(req.file),
         role: role,
         frontendUser: false,
         isEmailVerified: true,
@@ -113,7 +117,7 @@ class JobSeekerController {
       updateData.isEmailVerified = isEmailVerified === "true" || isEmailVerified === true;
 
       if (req.file) {
-        updateData.image = req.file.path;
+        updateData.image = getUploadedFilePath(req.file);
       }
 
       await UserModel.findByIdAndUpdate(id, updateData, { new: true });

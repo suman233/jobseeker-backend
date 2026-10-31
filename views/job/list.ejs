@@ -71,9 +71,9 @@
                               <% } %>
                             </td>
                             <td>
-                              <% if (item.companyLogo) { %>
-                                <img src="/<%= item.companyLogo.replace(/\\/g, '/') %>" alt="" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; margin-right: 4px;" onerror="this.style.display='none'">
-                              <% } %>
+                                <% if (item.companyLogo) { %>
+                                  <img src="<%= getImageUrl(item.companyLogo) %>" alt="" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; margin-right: 4px;" onerror="this.style.display='none'">
+                                <% } %>
                               <%= item.company %>
                             </td>
                             <td><%= item.location %> (<%= item.workplaceType %>)</td>
