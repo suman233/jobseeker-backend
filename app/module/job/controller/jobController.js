@@ -2,7 +2,11 @@ const express = require("express");
 const router = express.Router();
 const routerLabel = require("route-label");
 const { JobModel } = require("../model/job");
-const { getUploadedFileName, getUploadedFilePath } = require("../../../helper/commonHelper");
+const {
+  getUploadedFileName,
+  getUploadedFilePath,
+  getImageUrl,
+} = require("../../../helper/commonHelper");
 const namedRouter = routerLabel(router);
 
 class JobController {
@@ -13,10 +17,11 @@ class JobController {
       res.render("job/list", {
         data: jobs,
         toast: req.query.toast || "",
+        getImageUrl,
       });
     } catch (err) {
       console.error("jobListPage error:", err);
-      res.render("job/list", { data: [], toast: "failed" });
+      res.render("job/list", { data: [], toast: "failed", getImageUrl });
     }
   }
 
@@ -122,6 +127,7 @@ class JobController {
       return res.render("job/edit", {
         data: job,
         toast: req.query.toast || "",
+        getImageUrl,
       });
     } catch (err) {
       console.error("jobEditPage error:", err);

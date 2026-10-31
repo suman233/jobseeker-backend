@@ -7,6 +7,7 @@ const {
   hashPassword,
   getUploadedFileName,
   getUploadedFilePath,
+  getImageUrl,
 } = require("../../../helper/commonHelper");
 const namedRouter = routerLabel(router);
 const { sendMailRegistration } = require("../../../helper/sendEmail");
@@ -19,10 +20,11 @@ class JobSeekerController {
       res.render("jobseeker/list", {
         data: jobSeekers,
         toast: req.query.toast || "",
+        getImageUrl,
       });
     } catch (err) {
       console.error("JobSeekerListPage error:", err);
-      res.render("jobseeker/list", { data: [], toast: "failed" });
+      res.render("jobseeker/list", { data: [], toast: "failed", getImageUrl });
     }
   }
 
@@ -98,6 +100,7 @@ class JobSeekerController {
       return res.render("jobseeker/edit", {
         data: jobSeeker,
         toast: req.query.toast || "",
+        getImageUrl,
       });
     } catch (err) {
       console.error("jobSeekerEditPage error:", err.message);

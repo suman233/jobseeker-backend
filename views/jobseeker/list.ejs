@@ -57,15 +57,14 @@
                         </tr>
                       </thead>
                       <tbody>
+                        <% const resolveUserImg = (typeof getImageUrl === 'function') ? getImageUrl : ((img) => (img ? ('/uploads/user/' + img.split('/').pop()) : '/dist/img/avatar5.png')); %>
                         <% let serialNo = 1; %>
                         <% for (let item of data) { %>
                           <tr>
                             <td><%= serialNo %></td>
                             <td>
                               <div class="d-flex align-items-center">
-                                <% if (item.image) { %>
-                                  <img src="<%= getImageUrl(item.image, 'user') %>" alt="" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; margin-right: 8px; border: 1px solid #dee2e6;" onerror="this.style.display='none'">
-                                <% } %>
+                                <img src="<%= resolveUserImg(item.image, 'user') %>" alt="" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; margin-right: 8px; border: 1px solid #dee2e6;" onerror="this.onerror=null; this.src='/dist/img/avatar5.png';">
                                 <strong><%= item.name %></strong>
                               </div>
                             </td>

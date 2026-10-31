@@ -38,17 +38,21 @@ const getUploadedFilePath = (file) => {
   return getUploadedFileName(file);
 };
 
+const DEFAULT_USER_IMG = "/dist/img/avatar5.png";
+const DEFAULT_JOB_IMG = "/dist/img/default-150x150.png";
+
 /**
  * Resolve any image filename or path to a browser-accessible web path.
+ * If image is missing or empty, returns standard default fallback image.
  *
  * @param {string} imagePath - Stored image filename (e.g. '1793398098222.jpeg') or path
  * @param {'user'|'job'} type - Subdirectory category ('user' for profile photos, 'job' for company logos)
- * @returns {string} - Relative web path (e.g. '/uploads/user/1793398098222.jpeg') or full URL
+ * @returns {string} - Relative web path (e.g. '/uploads/user/1793398098222.jpeg') or default image
  */
 const getImageUrl = (imagePath, type = "user") => {
-  if (!imagePath) return "";
+  const defaultImg = type === "job" ? DEFAULT_JOB_IMG : DEFAULT_USER_IMG;
+  if (!imagePath || !String(imagePath).trim()) return defaultImg;
   const str = String(imagePath).trim();
-  if (!str) return "";
   if (
     str.startsWith("http://") ||
     str.startsWith("https://") ||

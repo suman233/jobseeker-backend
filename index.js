@@ -112,6 +112,15 @@ app.use(
 );
 app.use(flash());
 
+// ******************* View Engine Locals Middleware *********************
+app.use((req, res, next) => {
+  res.locals.getImageUrl = getImageUrl;
+  res.locals.generateUrl = global.generateUrl;
+  app.locals.getImageUrl = getImageUrl;
+  app.locals.generateUrl = global.generateUrl;
+  next();
+});
+
 // ******************* Health Check for Render Deployment *********************
 app.get("/health", (req, res) => {
   res.status(200).json({

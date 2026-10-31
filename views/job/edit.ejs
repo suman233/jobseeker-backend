@@ -156,17 +156,18 @@
                       </div>
 
                       <!-- Live Image Preview Below Input -->
-                      <div id="logoPreviewContainer" class="mt-3 <%= data.companyLogo ? '' : 'd-none' %>">
+                      <% const resolveJobImg = (typeof getImageUrl === 'function') ? getImageUrl : ((img) => (img ? ('/uploads/job/' + img.split('/').pop()) : '/dist/img/default-150x150.png')); %>
+                      <div id="logoPreviewContainer" class="mt-3">
                         <p class="text-muted text-sm font-weight-bold mb-1" id="logoPreviewLabel">
                           <%= data.companyLogo ? 'Current Company Logo:' : 'Company Logo Preview:' %>
                         </p>
                         <div class="p-2 border rounded d-inline-block bg-white shadow-sm">
                           <img
                             id="logoPreview"
-                            src="<%= data.companyLogo ? getImageUrl(data.companyLogo, 'job') : '#' %>"
+                            src="<%= resolveJobImg(data.companyLogo, 'job') %>"
                             alt="Company Logo Preview"
                             style="max-width: 100px; max-height: 100px; object-fit: contain; display: block;"
-                            onerror="this.style.display='none'"
+                            onerror="this.onerror=null; this.src='/dist/img/default-150x150.png';"
                           />
                         </div>
                       </div>

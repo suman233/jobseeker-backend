@@ -60,6 +60,7 @@
                         </tr>
                       </thead>
                       <tbody>
+                        <% const resolveJobImg = (typeof getImageUrl === 'function') ? getImageUrl : ((img) => (img ? ('/uploads/job/' + img.split('/').pop()) : '/dist/img/default-150x150.png')); %>
                         <% let serialNo = 1; %>
                         <% for (let item of data) { %>
                           <tr>
@@ -71,9 +72,7 @@
                               <% } %>
                             </td>
                             <td>
-                                <% if (item.companyLogo) { %>
-                                  <img src="<%= getImageUrl(item.companyLogo, 'job') %>" alt="" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; margin-right: 4px;" onerror="this.style.display='none'">
-                                <% } %>
+                              <img src="<%= resolveJobImg(item.companyLogo, 'job') %>" alt="" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; margin-right: 6px; border: 1px solid #dee2e6; vertical-align: middle;" onerror="this.onerror=null; this.src='/dist/img/default-150x150.png';">
                               <%= item.company %>
                             </td>
                             <td><%= item.location %> (<%= item.workplaceType %>)</td>

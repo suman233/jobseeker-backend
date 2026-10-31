@@ -7,6 +7,7 @@ const {
   hashPassword,
   getUploadedFileName,
   getUploadedFilePath,
+  getImageUrl,
 } = require("../../../helper/commonHelper");
 const namedRouter = routerLabel(router);
 const { sendMailRegistration } = require("../../../helper/sendEmail");
@@ -19,10 +20,11 @@ class EmployerController {
       res.render("employer/list", {
         data: employers,
         toast: req.query.toast || "",
+        getImageUrl,
       });
     } catch (err) {
       console.error("employerListPage error:", err);
-      res.render("employer/list", { data: [], toast: "failed" });
+      res.render("employer/list", { data: [], toast: "failed", getImageUrl });
     }
   }
 
@@ -101,6 +103,7 @@ class EmployerController {
       return res.render("employer/edit", {
         data: employer,
         toast: req.query.toast || "",
+        getImageUrl,
       });
     } catch (err) {
       console.error("employerEditPage error:", err.message);

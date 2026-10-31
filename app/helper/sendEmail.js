@@ -65,7 +65,7 @@ const sendMailRegistration = async (user, password) => {
 
   const subject = "Your JobSeeker account details";
   const text = `Hello ${user.name}, your account has been created. Sign in at ${loginUrl} with email ${user.email} and password ${password}`;
-  const html = `<p>Hello ${escapeHtml(user.name)},</p><p>Your account has been created.</p><p>Email: ${escapeHtml(user.email)}<br>Password: <strong>${escapeHtml(password)}</strong></p><p><a href="${escapeHtml(loginUrl)}">Sign in to JobSeeker</a></p>`;
+  const html = `<p>Hello ${escapeHtml(user.name)},</p><p>Your account has been created.</p><p>Email: ${escapeHtml(user.email)}<br>Password: <strong>${escapeHtml(password)}</strong></p><p><a href="${escapeHtml(loginUrl)}">Sign in to User</a></p>`;
 
   // 1. Try Resend SDK first (Works 100% on Render over Port 443)
   const sentResend = await sendViaResend({
