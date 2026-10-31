@@ -144,16 +144,30 @@
 
                   <div class="row">
                     <div class="col-md-6 form-group">
-                      <% if (data.companyLogo) { %>
-                        <div class="mb-2">
-                          <img src="/<%= data.companyLogo.replace(/\\/g, '/') %>" alt="Company Logo" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; border: 1px solid #ddd;" onerror="this.style.display='none'">
-                        </div>
-                      <% } %>
-                      <label for="companyLogo">Change Company Logo</label>
+                      <label for="companyLogo">Company Logo</label>
                       <div class="input-group">
                         <div class="custom-file">
-                          <input type="file" class="custom-file-input" id="companyLogo" name="companyLogo">
-                          <label class="custom-file-label" for="companyLogo">Choose new logo</label>
+                          <input type="file" class="custom-file-input" id="companyLogo" name="companyLogo" accept="image/*">
+                          <label class="custom-file-label" id="logoFileLabel" for="companyLogo">Choose new logo</label>
+                        </div>
+                        <div class="input-group-append">
+                          <span class="input-group-text">Upload</span>
+                        </div>
+                      </div>
+
+                      <!-- Live Image Preview Below Input -->
+                      <div id="logoPreviewContainer" class="mt-3">
+                        <p class="text-muted text-sm font-weight-bold mb-1" id="logoPreviewLabel">
+                          <%= data.companyLogo ? 'Current Company Logo:' : 'Company Logo Preview:' %>
+                        </p>
+                        <div class="p-2 border rounded d-inline-block bg-white shadow-sm">
+                          <img
+                            id="logoPreview"
+                            src="<%= data.companyLogo ? '/' + data.companyLogo.replace(/\\/g, '/') : '#' %>"
+                            alt="Company Logo Preview"
+                            style="<%= data.companyLogo ? 'display:block;' : 'display:none;' %> max-width: 100px; max-height: 100px; object-fit: contain;"
+                            onerror="this.style.display='none'"
+                          />
                         </div>
                       </div>
                     </div>
@@ -180,6 +194,28 @@
   </div>
   <!-- /.content-wrapper -->
   <%-include('../common/footer')%>
+  <script>
+    document.getElementById('companyLogo')?.addEventListener('change', function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = document.getElementById('logoPreview');
+          const lbl = document.getElementById('logoPreviewLabel');
+          if (img) {
+            img.src = evt.target.result;
+            img.style.display = 'block';
+          }
+          if (lbl) {
+            lbl.innerText = 'New Logo to be Saved:';
+          }
+        };
+        reader.readAsDataURL(file);
+        const label = document.getElementById('logoFileLabel');
+        if (label) label.innerText = file.name;
+      }
+    });
+  </script>
 </body>
 </html>
 
