@@ -32,6 +32,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
     "nodemon": "^3.1.9",
+    "resend": "^6.37.0",
     "route-label": "^1.2.3"
   },
   "overrides": {
