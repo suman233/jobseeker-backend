@@ -19,6 +19,9 @@ const transportOptions = isGmail
       tls: {
         rejectUnauthorized: false,
       },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     }
   : {
       host: process.env.EMAIL_HOST || "smtp.gmail.com",
@@ -31,6 +34,9 @@ const transportOptions = isGmail
       tls: {
         rejectUnauthorized: false,
       },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     };
 
 const transporter = nodemailer.createTransport(transportOptions);

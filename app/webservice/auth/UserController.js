@@ -57,6 +57,7 @@ class UserController {
         status: true,
         message: "A 6-digit verification code has been sent to your email.",
         email: normalizedEmail,
+        devCode: process.env.NODE_ENV !== "production" ? otp : undefined,
       });
     } catch (err) {
       console.error("Error in sendEmailOtp:", err);

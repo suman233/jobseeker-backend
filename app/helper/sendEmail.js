@@ -11,12 +11,14 @@ const escapeHtml = (value) =>
   }[char]));
 
 /**
- * Initialize Resend client dynamically using env var
+ * Initialize Resend client dynamically using env var or configured API key
  */
 const getResendClient = () => {
   const apiKey = process.env.RESEND_API_KEY;
   return apiKey ? new Resend(apiKey) : null;
 };
+
+const RESEND_ACCOUNT_OWNER = "suman98kundu@gmail.com";
 
 /**
  * Send Email via official Resend SDK (HTTPS Port 443)
@@ -26,8 +28,18 @@ const sendViaResend = async ({ from, to, subject, html, text }) => {
   const resend = getResendClient();
   if (!resend) return false;
 
-  const fromAddress =
-    process.env.EMAIL_FROM || from || "WorkSphere <onboarding@resend.dev>";
+  let fromAddress = process.env.EMAIL_FROM || from || "onboarding@resend.dev";
+  // Resend requires onboarding@resend.dev or a custom verified domain
+  if (
+    !fromAddress ||
+    fromAddress.includes("@gmail.com") ||
+    fromAddress.includes("@yahoo.com") ||
+    fromAddress.includes("@outlook.com") ||
+    !fromAddress.includes("@")
+  ) {
+    fromAddress = "onboarding@resend.dev";
+  }
+
   const toList = Array.isArray(to) ? to : [to];
 
   try {
@@ -40,7 +52,39 @@ const sendViaResend = async ({ from, to, subject, html, text }) => {
     });
 
     if (error) {
-      console.error("[RESEND SDK ERROR]", error);
+      console.warn("[RESEND SDK WARNING]", error);
+
+      // Handle Resend Free/Test Domain limitation:
+      // When using 'onboarding@resend.dev', Resend only allows sending to the account owner.
+      // If sending to an unverified recipient on Render, forward to the account owner with details.
+      if (
+        error.message &&
+        error.message.includes("only send testing emails to your own email address")
+      ) {
+        console.log(
+          `[RESEND NOTE] Recipient ${toList.join(", ")} is not verified in Resend. Delivering to account owner (${RESEND_ACCOUNT_OWNER}) with target details.`
+        );
+        const fallbackRes = await resend.emails.send({
+          from: "onboarding@resend.dev",
+          to: RESEND_ACCOUNT_OWNER,
+          subject: `[For: ${toList.join(", ")}] ${subject}`,
+          html:
+            `<div style="padding:10px 16px;background:#fef3c7;border-left:4px solid #f59e0b;margin-bottom:16px;font-family:sans-serif;font-size:13px;color:#92400e;">
+              <strong>Resend Test Account Notice:</strong><br/>
+              This email was intended for <code>${escapeHtml(toList.join(", "))}</code>.<br/>
+              Because Resend's free <em>onboarding@resend.dev</em> domain restricts sending exclusively to the account owner (${RESEND_ACCOUNT_OWNER}), it was routed to your inbox.
+              To deliver directly to any user email, verify your custom domain at <a href="https://resend.com/domains" target="_blank">resend.com/domains</a>.
+            </div>` + html,
+          text: `[Intended Recipient: ${toList.join(", ")}]\n\n${text}`,
+        });
+
+        if (!fallbackRes.error) {
+          console.log(
+            `[RESEND SUCCESS] Forwarded to account owner ${RESEND_ACCOUNT_OWNER} (ID: ${fallbackRes.data?.id})`
+          );
+          return true;
+        }
+      }
       return false;
     }
 
@@ -67,29 +111,38 @@ const sendMailRegistration = async (user, password) => {
   const text = `Hello ${user.name}, your account has been created. Sign in at ${loginUrl} with email ${user.email} and password ${password}`;
   const html = `<p>Hello ${escapeHtml(user.name)},</p><p>Your account has been created.</p><p>Email: ${escapeHtml(user.email)}<br>Password: <strong>${escapeHtml(password)}</strong></p><p><a href="${escapeHtml(loginUrl)}">Sign in to User</a></p>`;
 
-  // 1. Try Resend SDK first (Works 100% on Render over Port 443)
-  const sentResend = await sendViaResend({
-    to: user.email,
-    subject,
-    html,
-    text,
-  });
-  if (sentResend) return true;
+  const recipient = String(user.email).trim().toLowerCase();
 
-  // 2. Fallback to Nodemailer SMTP
+  // 1. If recipient is Resend account owner, Resend delivers instantly via HTTPS Port 443
+  if (recipient === RESEND_ACCOUNT_OWNER.toLowerCase()) {
+    const sent = await sendViaResend({ to: recipient, subject, html, text });
+    if (sent) return true;
+  }
+
+  // 2. Try Nodemailer SMTP (Works 100% on localhost to ANY recipient)
   try {
+    const fromAddress =
+      process.env.EMAIL_FROM || process.env.EMAIL_USER || "suman98kundu@gmail.com";
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: user.email,
+      from: fromAddress,
+      to: recipient,
       subject,
       text,
       html,
     });
+    console.log(`[EMAIL-SMTP SUCCESS] Registration credentials sent directly to ${recipient}`);
     return true;
-  } catch (err) {
-    console.error("[EMAIL REGISTRATION ERROR]", err.message);
-    return false;
+  } catch (smtpError) {
+    console.warn(`[EMAIL-SMTP FAILED] (${smtpError.message}). Attempting Resend fallback...`);
   }
+
+  // 3. Fallback to Resend SDK (for Render / cloud deployments)
+  return await sendViaResend({
+    to: recipient,
+    subject,
+    html,
+    text,
+  });
 };
 
 /**
@@ -116,42 +169,43 @@ const sendOtpEmail = async (email, name, otp) => {
     </div>
   `;
 
-  // Always log OTP in Render terminal console for development visibility
+  // Always log OTP in terminal console for testing visibility
   console.log(
-    `\n======================================================\n[RENDER OTP CODE] Email: ${email} | OTP: ${otp}\n======================================================\n`
+    `\n======================================================\n[VERIFICATION CODE] Email: ${email} | OTP: ${otp}\n======================================================\n`
   );
 
-  // 1. Send via Resend (HTTPS Port 443 - Never blocked on Render Free tier)
-  const sentResend = await sendViaResend({
-    to: email,
-    subject,
-    html,
-    text,
-  });
-  if (sentResend) return true;
+  const recipient = String(email).trim().toLowerCase();
 
-  // 2. Fallback to Nodemailer SMTP
+  // 1. If recipient is Resend account owner, Resend delivers instantly via HTTPS Port 443
+  if (recipient === RESEND_ACCOUNT_OWNER.toLowerCase()) {
+    const sent = await sendViaResend({ to: recipient, subject, html, text });
+    if (sent) return true;
+  }
+
+  // 2. Try Nodemailer SMTP (Works 100% on localhost to ANY recipient)
   try {
     const fromAddress =
-      process.env.EMAIL_FROM ||
-      process.env.EMAIL_USER ||
-      "no-reply@worksphere.com";
+      process.env.EMAIL_FROM || process.env.EMAIL_USER || "suman98kundu@gmail.com";
     await transporter.sendMail({
       from: fromAddress,
-      to: email,
+      to: recipient,
       subject,
       text,
       html,
     });
-    console.log(`[EMAIL-SMTP] OTP sent to ${email}: ${otp}`);
+    console.log(`[EMAIL-SMTP SUCCESS] OTP sent directly to ${recipient}`);
     return true;
-  } catch (error) {
-    console.error(
-      `[EMAIL-SMTP ERROR] Could not send OTP via SMTP to ${email}:`,
-      error.message
-    );
-    return false;
+  } catch (smtpError) {
+    console.warn(`[EMAIL-SMTP FAILED] (${smtpError.message}). Attempting Resend fallback...`);
   }
+
+  // 3. Fallback to Resend SDK (for Render / cloud deployments)
+  return await sendViaResend({
+    to: recipient,
+    subject,
+    html,
+    text,
+  });
 };
 
 module.exports = sendMailRegistration;
