@@ -1,5 +1,5 @@
 const { JobModel } = require("../../module/job/model/job");
-const { getUploadedFilePath } = require("../../helper/commonHelper");
+const { getUploadedFileName, getUploadedFilePath } = require("../../helper/commonHelper");
 
 class JobApiController {
   /**
@@ -169,7 +169,9 @@ class JobApiController {
       const newJob = await JobModel.create({
         title: String(title).trim(),
         company: String(company).trim(),
-        companyLogo: req?.file ? getUploadedFilePath(req.file) : (req.body.companyLogo || ""),
+        companyLogo: req?.file
+          ? getUploadedFileName(req.file)
+          : (req.body.companyLogo ? getUploadedFileName(req.body.companyLogo) : ""),
         location: String(location || "San Francisco, CA or Remote").trim(),
         jobType: jobType || "Full-time",
         workplaceType: workplaceType || "Remote",
@@ -210,7 +212,9 @@ class JobApiController {
       const updateData = { ...req.body };
 
       if (req.file) {
-        updateData.companyLogo = getUploadedFilePath(req.file);
+        updateData.companyLogo = getUploadedFileName(req.file);
+      } else if (req.body.companyLogo) {
+        updateData.companyLogo = getUploadedFileName(req.body.companyLogo);
       }
 
       const updatedJob = await JobModel.findByIdAndUpdate(id, updateData, { new: true });

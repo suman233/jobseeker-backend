@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const routerLabel = require("route-label");
 const { JobModel } = require("../model/job");
-const { getUploadedFilePath } = require("../../../helper/commonHelper");
+const { getUploadedFileName, getUploadedFilePath } = require("../../../helper/commonHelper");
 const namedRouter = routerLabel(router);
 
 class JobController {
@@ -83,7 +83,7 @@ class JobController {
       const jobData = {
         title: String(title).trim(),
         company: String(company).trim(),
-        companyLogo: getUploadedFilePath(req.file),
+        companyLogo: getUploadedFileName(req.file),
         location: String(location || "San Francisco, CA or Remote").trim(),
         jobType: jobType || "Full-time",
         workplaceType: workplaceType || "Remote",
@@ -198,7 +198,7 @@ class JobController {
       };
 
       if (req.file) {
-        updateData.companyLogo = getUploadedFilePath(req.file);
+        updateData.companyLogo = getUploadedFileName(req.file);
       }
 
       await JobModel.findByIdAndUpdate(id, updateData, { new: true });

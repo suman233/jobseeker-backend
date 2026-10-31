@@ -5,6 +5,7 @@ const { UserModel, UserValidationSchema } = require("../../auth/model/user");
 const {
   generateRandomPassword,
   hashPassword,
+  getUploadedFileName,
   getUploadedFilePath,
 } = require("../../../helper/commonHelper");
 const namedRouter = routerLabel(router);
@@ -60,7 +61,7 @@ class EmployerController {
         name: name,
         email: email,
         password: hashedPassword,
-        image: getUploadedFilePath(req.file),
+        image: getUploadedFileName(req.file),
         role: role,
         frontendUser: false,
         isEmailVerified: true,
@@ -120,7 +121,7 @@ class EmployerController {
       updateData.isEmailVerified = isEmailVerified === "true" || isEmailVerified === true;
 
       if (req.file) {
-        updateData.image = getUploadedFilePath(req.file);
+        updateData.image = getUploadedFileName(req.file);
       }
 
       await UserModel.findByIdAndUpdate(id, updateData, { new: true });

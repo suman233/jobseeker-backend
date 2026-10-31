@@ -14,42 +14,65 @@ function generateRandomPassword(length = 12) {
 }
 
 /**
- * Standardize uploaded file path to relative web path (e.g. 'uploads/1736661620828.jpeg')
- * Never store OS-specific absolute filesystem paths in MongoDB!
+ * Standardize uploaded image to store ONLY the raw filename (e.g. '1793398098222.jpeg')
+ * in MongoDB. Never store directory prefixes or OS-specific disk paths in the database.
  */
-const getUploadedFilePath = (file) => {
+const getUploadedFileName = (file) => {
   if (!file) return "";
-  if (file.filename) return `uploads/${file.filename}`;
-  const str = String(file.path || file).replace(/\\/g, "/");
-  const idx = str.indexOf("uploads/");
-  if (idx !== -1) return str.substring(idx);
-  return `uploads/${str.split("/").pop()}`;
+  if (typeof file === "string") {
+    const clean = file.replace(/\\/g, "/").trim();
+    if (!clean) return "";
+    return clean.split("/").pop();
+  }
+  if (file.filename) return file.filename;
+  if (file.name) return file.name;
+  if (file.path) {
+    const clean = String(file.path).replace(/\\/g, "/");
+    return clean.split("/").pop();
+  }
+  return "";
+};
+
+// Alias for seamless backward compatibility
+const getUploadedFilePath = (file) => {
+  return getUploadedFileName(file);
 };
 
 /**
- * Resolve any image path (clean relative, legacy absolute, or remote URL) to a browser-accessible web URL
+ * Resolve any image filename or path to a browser-accessible web path.
+ *
+ * @param {string} imagePath - Stored image filename (e.g. '1793398098222.jpeg') or path
+ * @param {'user'|'job'} type - Subdirectory category ('user' for profile photos, 'job' for company logos)
+ * @returns {string} - Relative web path (e.g. '/uploads/user/1793398098222.jpeg') or full URL
  */
-const getImageUrl = (imagePath) => {
+const getImageUrl = (imagePath, type = "user") => {
   if (!imagePath) return "";
+  const str = String(imagePath).trim();
+  if (!str) return "";
   if (
-    imagePath.startsWith("http://") ||
-    imagePath.startsWith("https://") ||
-    imagePath.startsWith("data:")
+    str.startsWith("http://") ||
+    str.startsWith("https://") ||
+    str.startsWith("data:")
   ) {
-    return imagePath;
+    return str;
   }
-  const clean = String(imagePath).replace(/\\/g, "/");
-  const idx = clean.indexOf("uploads/");
-  if (idx !== -1) {
-    return "/" + clean.substring(idx);
+  const clean = str.replace(/\\/g, "/").replace(/^\/+/, "");
+
+  if (clean.startsWith("uploads/user/") || clean.startsWith("uploads/job/")) {
+    return "/" + clean;
   }
-  return "/uploads/" + clean.replace(/^\/+/, "");
+  if (clean.startsWith("uploads/")) {
+    const filename = clean.replace(/^uploads\//, "");
+    return `/uploads/${type}/${filename}`;
+  }
+  return `/uploads/${type}/${clean}`;
 };
 
 module.exports = {
   hashPassword,
   comparePassword,
   generateRandomPassword,
+  getUploadedFileName,
   getUploadedFilePath,
   getImageUrl,
 };

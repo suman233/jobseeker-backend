@@ -163,7 +163,7 @@
                         <div class="p-2 border rounded d-inline-block bg-white shadow-sm">
                           <img
                             id="logoPreview"
-                            src="<%= data.companyLogo ? getImageUrl(data.companyLogo) : '#' %>"
+                            src="<%= data.companyLogo ? getImageUrl(data.companyLogo, 'job') : '#' %>"
                             alt="Company Logo Preview"
                             style="<%= data.companyLogo ? 'display:block;' : 'display:none;' %> max-width: 100px; max-height: 100px; object-fit: contain;"
                             onerror="this.style.display='none'"

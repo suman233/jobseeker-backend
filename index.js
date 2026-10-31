@@ -75,6 +75,8 @@ app.use(
 // ******************* Static Assets & Body Parsers *********************
 app.use(express.static(resolve(join(__dirname, "public"))));
 app.use("/public", express.static(resolve(join(__dirname, "public"))));
+app.use("/uploads/user", express.static(resolve(join(__dirname, "uploads/user"))));
+app.use("/uploads/job", express.static(resolve(join(__dirname, "uploads/job"))));
 app.use("/uploads", express.static(resolve(join(__dirname, "uploads"))));
 
 app.use(bodyParser.json({ limit: "50mb" }));

@@ -5,6 +5,7 @@ const {
   comparePassword,
   hashPassword,
   generateRandomPassword,
+  getUploadedFileName,
   getUploadedFilePath,
 } = require("../../helper/commonHelper");
 const { UserModel } = require("../../module/auth/model/user");
@@ -139,6 +140,9 @@ class UserController {
       const finalName =
         (name && String(name).trim()) || normalizedEmail.split("@")[0];
       const hashedPassword = await hashPassword(String(password));
+      const finalImage = req.file
+        ? getUploadedFileName(req.file)
+        : (image ? getUploadedFileName(image) : "");
 
       // Check if email was verified beforehand via OTP verification
       const verifiedOtpDoc = await OtpModel.findOne({
@@ -159,7 +163,7 @@ class UserController {
         existingUser.password = hashedPassword;
         existingUser.frontendUser = true;
         if (role) existingUser.role = role;
-        if (image) existingUser.image = image;
+        if (finalImage) existingUser.image = finalImage;
 
         if (verifiedOtpDoc) {
           existingUser.isEmailVerified = true;
@@ -208,7 +212,7 @@ class UserController {
           email: normalizedEmail,
           password: hashedPassword,
           role: role || "jobSeeker",
-          image: image || "",
+          image: finalImage || "",
           frontendUser: true,
           isEmailVerified: true,
           otp: null,
@@ -242,7 +246,7 @@ class UserController {
         email: normalizedEmail,
         password: hashedPassword,
         role: role || "jobSeeker",
-        image: image || "",
+        image: finalImage || "",
         frontendUser: true,
         isEmailVerified: false,
         otp: otp,
@@ -665,7 +669,9 @@ class UserController {
         updateData.password = await hashPassword(password);
       }
       if (req.file) {
-        updateData.image = getUploadedFilePath(req.file);
+        updateData.image = getUploadedFileName(req.file);
+      } else if (req.body.image) {
+        updateData.image = getUploadedFileName(req.body.image);
       }
 
       const updatedUser = await UserModel.findByIdAndUpdate(id, updateData, { new: true }).select("-password -otp -otpExpiresAt");
