@@ -8,13 +8,21 @@ const namedRouter = routerLabel(router);
 
 router.use(requireAdmin);
 
-namedRouter.get(
-  "employer-list",
-  "/employer",
-  employerController.employerListPage
-);
+namedRouter.get("employer-list", "/employer", employerController.employerListPage);
 namedRouter.get("employer-add", "/employer-add", employerController.employeeADDPage);
-namedRouter.post("employer-register", "/employer-registration", ImageUpload.single("image"), employerController.employerAdd)
-
+namedRouter.post(
+  "employer-register",
+  "/employer-registration",
+  ImageUpload.single("image"),
+  employerController.employerAdd
+);
+namedRouter.get("employer-edit", "/employer-edit/:id", employerController.employerEditPage);
+namedRouter.post(
+  "employer-update",
+  "/employer-update/:id",
+  ImageUpload.single("image"),
+  employerController.employerUpdate
+);
+namedRouter.get("employer-delete", "/employer-delete/:id", employerController.employerDelete);
 
 module.exports = router;

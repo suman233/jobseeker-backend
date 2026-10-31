@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%-include('../common/head')%>
+  <body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+      <!-- Navbar -->
+      <%-include('../common/navbar') %>
+      <!-- /.navbar -->
+
+      <!-- Main Sidebar Container -->
+      <%-include('../common/sidebar')%>
+
+      <!-- Content Wrapper. Contains page content -->
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <div class="container-fluid">
+            <div class="row mb-2">
+              <div class="col-sm-6">
+                <h1>Job Management</h1>
+              </div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                  <li class="breadcrumb-item"><a href="#">Home</a></li>
+                  <li class="breadcrumb-item active">Jobs</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Job Opportunities</h3>
+                    <a href="<%= generateUrl('job-add')%>" class="btn btn-primary ms-auto">
+                      <i class="fas fa-plus mr-1"></i> Post New Job
+                    </a>
+                  </div>
+                  <!-- /.card-header -->
+                  <div class="card-body">
+                    <table
+                      id="example2"
+                      class="table table-bordered table-hover"
+                    >
+                      <thead>
+                        <tr>
+                          <th>Sl. No.</th>
+                          <th>Role Title</th>
+                          <th>Company</th>
+                          <th>Location</th>
+                          <th>Salary Range</th>
+                          <th>Type</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% let serialNo = 1; %>
+                        <% for (let item of data) { %>
+                          <tr>
+                            <td><%= serialNo %></td>
+                            <td>
+                              <strong><%= item.title %></strong>
+                              <% if (item.isFeatured) { %>
+                                <span class="badge badge-warning ml-1">Featured</span>
+                              <% } %>
+                            </td>
+                            <td>
+                              <% if (item.companyLogo) { %>
+                                <img src="/<%= item.companyLogo.replace(/\\/g, '/') %>" alt="" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; margin-right: 4px;" onerror="this.style.display='none'">
+                              <% } %>
+                              <%= item.company %>
+                            </td>
+                            <td><%= item.location %> (<%= item.workplaceType %>)</td>
+                            <td><strong><%= item.salaryText || 'Competitive' %></strong></td>
+                            <td><span class="badge badge-secondary"><%= item.jobType %></span></td>
+                            <td>
+                              <% if (item.status === 'active') { %>
+                                <span class="badge badge-success" style="background-color: #28a745; color: #fff; padding: 5px 8px; border-radius: 4px;">Active</span>
+                              <% } else if (item.status === 'closed') { %>
+                                <span class="badge badge-danger" style="background-color: #dc3545; color: #fff; padding: 5px 8px; border-radius: 4px;">Closed</span>
+                              <% } else { %>
+                                <span class="badge badge-secondary" style="padding: 5px 8px; border-radius: 4px;">Draft</span>
+                              <% } %>
+                            </td>
+                            <td>
+                              <a
+                                href="<%= generateUrl('job-edit', { id: item._id }) %>"
+                                class="btn btn-sm btn-success"
+                                ><i class="fas fa-edit mr-1"></i> Update</a
+                              >
+                              <a
+                                href="<%= generateUrl('job-delete', { id: item._id }) %>"
+                                class="btn btn-sm btn-danger ml-1"
+                                onclick="return confirm('Are you sure you want to delete this job posting?');"
+                                ><i class="fas fa-trash mr-1"></i> Delete</a
+                              >
+                            </td>
+                          </tr>
+                          <% serialNo++; %>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+                  <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+              </div>
+              <!-- /.col -->
+            </div>
+            <!-- /.row -->
+          </div>
+        </section>
+      </div>
+      <%-include('../common/footer')%>
+    </div>
+  </body>
+</html>

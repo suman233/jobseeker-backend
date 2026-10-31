@@ -2,7 +2,7 @@
     <div class="float-right d-none d-sm-block"><b>Version</b> 3.2.0</div>
     <strong
       >Copyright &copy; 2025-2026
-      <a href="https://adminlte.io">SkAdminLTE.com</a>.</strong
+      <a href="#">WorkSphere</a>.</strong
     >
     All rights reserved.
   </footer>
@@ -35,17 +35,22 @@
 <script src="/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
 <!-- AdminLTE App -->
 <script src="/dist/js/adminlte.min.js"></script>
-<!-- AdminLTE for demo purposes -->
-<script src="/dist/js/demo.js"></script>
 <!-- Page specific script -->
 <script>
   (function () {
     const messages = {
       "user-created": ["success", "User created and credentials emailed."],
+      "user-updated": ["success", "User updated successfully."],
+      "user-deleted": ["success", "User deleted successfully."],
+      "job-created": ["success", "Job created successfully."],
+      "job-updated": ["success", "Job updated successfully."],
+      "job-deleted": ["success", "Job deleted successfully."],
       duplicate: ["error", "An account with that email already exists."],
-      invalid: ["error", "Enter a valid name, email, and user type."],
+      invalid: ["error", "Please check your inputs and try again."],
       "mail-failed": ["error", "Could not send the credentials email; the account was not saved."],
-      failed: ["error", "Could not create the user. Please try again."],
+      "delete-failed": ["error", "Could not delete the record. Please try again."],
+      "update-failed": ["error", "Could not update the record. Please try again."],
+      failed: ["error", "Operation failed. Please try again."],
       "login-success": ["success", "Signed in successfully."]
     };
     const query = new URLSearchParams(window.location.search);

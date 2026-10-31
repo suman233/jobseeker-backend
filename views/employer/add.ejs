@@ -17,36 +17,33 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <!-- <h1>Add Employer</h1> -->
+            <h1>Add Employer</h1>
           </div>
-          <!-- <div class="col-sm-6">
+          <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item"><a href="<%= generateUrl('employer-list')%>">Employer</a></li>
               <li class="breadcrumb-item active">Add Employer</li>
             </ol>
-          </div> -->
+          </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
     <!-- Main content -->
     <section class="content">
       <div class="container-fluid">
         <div class="row">
-          <!-- left column -->
           <div class="col-md-12">
-            <!-- general form elements -->
             <div class="card card-primary">
               <div class="card-header">
                 <h3 class="card-title">Add Employer</h3>
               </div>
-              <!-- /.card-header -->
               <!-- form start -->
               <form action="<%= generateUrl('employer-register')%>" method="post" enctype="multipart/form-data">
                 <div class="card-body">
                   <div class="form-group">
                     <label for="fullName">Full Name</label>
-                    <input type="text" class="form-control" id="fullName" placeholder="Enter full name" name="name" minlength="3" maxlength="30" required>
+                    <input type="text" class="form-control" id="fullName" placeholder="Enter full name" name="name" minlength="3" maxlength="50" required>
                   </div>
                   <div class="form-group">
                     <label for="userEmail">Email address</label>
@@ -64,7 +61,7 @@
                     </div>
                   </fieldset>
                   <div class="form-group">
-                    <label for="exampleInputFile">File input</label>
+                    <label for="exampleInputFile">Profile Photo (Optional)</label>
                     <div class="input-group">
                       <div class="custom-file">
                         <input type="file" class="custom-file-input" id="exampleInputFile" name="image">
@@ -79,19 +76,15 @@
                 <!-- /.card-body -->
 
                 <div class="card-footer">
-                  <button type="submit" class="btn btn-primary">Submit</button>
+                  <button type="submit" class="btn btn-primary">Create User</button>
+                  <a href="<%= generateUrl('employer-list')%>" class="btn btn-default float-right">Cancel</a>
                 </div>
               </form>
             </div>
-            <!-- /.card -->
-
           </div>
-          <!--/.col (left) -->
         </div>
-        <!-- /.row -->
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
-    <!-- /.content -->
   </div>
   <!-- /.content-wrapper -->
   <%-include('../common/footer')%>

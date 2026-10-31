@@ -1,45 +1,30 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
   <!-- Brand Logo -->
-  <a href="../../index3.html" class="brand-link">
+  <a href="/" class="brand-link">
     <img
-      src="../../dist/img/AdminLTELogo.png"
-      alt="AdminLTE Logo"
+      src="/dist/img/AdminLTELogo.png"
+      alt="WorkSphere Logo"
       class="brand-image img-circle elevation-3"
       style="opacity: 0.8"
+      onerror="this.style.display='none'"
     />
-    <span class="brand-text font-weight-light">Admin Panel</span>
+    <span class="brand-text font-weight-light">WorkSphere Admin</span>
   </a>
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <!-- Sidebar user (optional) -->
+    <!-- Sidebar user -->
     <div class="user-panel mt-3 pb-3 mb-3 d-flex">
       <div class="image">
         <img
-          src="../../dist/img/user2-160x160.jpg"
+          src="/dist/img/user2-160x160.jpg"
           class="img-circle elevation-2"
           alt="User Image"
+          onerror="this.style.display='none'"
         />
       </div>
       <div class="info">
-        <a href="#" class="d-block">Super Admin</a>
-      </div>
-    </div>
-
-    <!-- SidebarSearch Form -->
-    <div class="form-inline">
-      <div class="input-group" data-widget="sidebar-search">
-        <input
-          class="form-control form-control-sidebar"
-          type="search"
-          placeholder="Search"
-          aria-label="Search"
-        />
-        <div class="input-group-append">
-          <button class="btn btn-sidebar">
-            <i class="fas fa-search fa-fw"></i>
-          </button>
-        </div>
+        <a href="#" class="d-block">Administrator</a>
       </div>
     </div>
 
@@ -51,31 +36,29 @@
         role="menu"
         data-accordion="false"
       >
-        <!-- Add icons to the links using the .nav-icon class
-         with font-awesome or any other icon font library -->
-
         <li class="nav-item">
           <a href="<%= generateUrl('employer-list')%>" class="nav-link">
-            <i class="nav-icon fas fa-th"></i>
-            <p>
-              Employer
-              <!-- <span class="right badge badge-danger">New</span> -->
-            </p>
+            <i class="nav-icon fas fa-building"></i>
+            <p>Employers</p>
           </a>
         </li>
         <li class="nav-item">
           <a href="<%= generateUrl('jobSeeker-list')%>" class="nav-link">
-            <i class="nav-icon fas fa-th"></i>
-            <p>
-              Job Seeker
-              <!-- <span class="right badge badge-danger">New</span> -->
-            </p>
+            <i class="nav-icon fas fa-user-tie"></i>
+            <p>Job Seekers</p>
           </a>
         </li>
         <li class="nav-item">
-          <a href="/api-docs/" class="nav-link" target="_blank" rel="noopener">
-            <i class="nav-icon fas fa-book"></i>
-            <p>API Documentation</p>
+          <a href="<%= generateUrl('job-list')%>" class="nav-link">
+            <i class="nav-icon fas fa-briefcase"></i>
+            <p>Jobs</p>
+          </a>
+        </li>
+        <li class="nav-header">ACCOUNT</li>
+        <li class="nav-item">
+          <a href="<%= generateUrl('logout')%>" class="nav-link text-danger">
+            <i class="nav-icon fas fa-sign-out-alt"></i>
+            <p>Logout</p>
           </a>
         </li>
       </ul>

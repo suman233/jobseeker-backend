@@ -560,6 +560,162 @@ class UserController {
       });
     }
   }
+
+  /**
+   * List Users (with optional role & search filtering)
+   */
+  async getAllUsers(req, res) {
+    try {
+      const { role, search, page = 1, limit = 50 } = req.query;
+      const filter = {};
+      if (role && ["jobSeeker", "employer", "admin"].includes(role)) {
+        filter.role = role;
+      }
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ];
+      }
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50));
+      const skip = (pageNum - 1) * limitNum;
+      const total = await UserModel.countDocuments(filter);
+      const users = await UserModel.find(filter)
+        .select("-password -otp -otpExpiresAt")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum);
+
+      return res.status(200).json({
+        status: true,
+        message: "Users retrieved successfully.",
+        total,
+        page: pageNum,
+        limit: limitNum,
+        data: users,
+      });
+    } catch (err) {
+      console.error("getAllUsers error:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to retrieve users.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Get Single User by ID
+   */
+  async getUserById(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await UserModel.findById(id).select("-password -otp -otpExpiresAt");
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found.",
+        });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "User details retrieved successfully.",
+        data: user,
+      });
+    } catch (err) {
+      console.error("getUserById error:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to retrieve user.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Update User API
+   */
+  async updateUser(req, res) {
+    try {
+      const { id } = req.params;
+      const { name, email, role, isEmailVerified, password } = req.body;
+
+      const updateData = {};
+      if (name) updateData.name = String(name).trim();
+      if (email) {
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const existing = await UserModel.findOne({ email: normalizedEmail, _id: { $ne: id } });
+        if (existing) {
+          return res.status(400).json({
+            status: false,
+            message: "Email is already taken by another account.",
+          });
+        }
+        updateData.email = normalizedEmail;
+      }
+      if (role && ["jobSeeker", "employer", "admin"].includes(role)) {
+        updateData.role = role;
+      }
+      if (typeof isEmailVerified !== "undefined") {
+        updateData.isEmailVerified = isEmailVerified === true || isEmailVerified === "true";
+      }
+      if (password && password.length >= 6) {
+        updateData.password = await hashPassword(password);
+      }
+      if (req.file) {
+        updateData.image = req.file.path;
+      }
+
+      const updatedUser = await UserModel.findByIdAndUpdate(id, updateData, { new: true }).select("-password -otp -otpExpiresAt");
+      if (!updatedUser) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found.",
+        });
+      }
+
+      return res.status(200).json({
+        status: true,
+        message: "User updated successfully.",
+        data: updatedUser,
+      });
+    } catch (err) {
+      console.error("updateUser error:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to update user.",
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * Delete User API
+   */
+  async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await UserModel.findByIdAndDelete(id);
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User not found.",
+        });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "User deleted successfully.",
+      });
+    } catch (err) {
+      console.error("deleteUser error:", err);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to delete user.",
+        error: err.message,
+      });
+    }
+  }
 }
 
 module.exports = new UserController();

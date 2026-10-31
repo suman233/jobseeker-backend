@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<%-include('../common/head')%>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+  <!-- Navbar -->
+  <%-include('../common/navbar')%>
+  <!-- /.navbar -->
+
+  <!-- Main Sidebar Container -->
+  <%-include('../common/sidebar')%>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Edit Job Posting</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="<%= generateUrl('job-list')%>">Jobs</a></li>
+              <li class="breadcrumb-item active">Edit Job</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card card-success">
+              <div class="card-header">
+                <h3 class="card-title">Update Job: <%= data.title %></h3>
+              </div>
+              <!-- form start -->
+              <form action="<%= generateUrl('job-update', { id: data._id })%>" method="post" enctype="multipart/form-data">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <label for="jobTitle">Job Title *</label>
+                      <input type="text" class="form-control" id="jobTitle" name="title" value="<%= data.title || '' %>" placeholder="e.g. Senior Product Designer" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                      <label for="companyName">Company Name *</label>
+                      <input type="text" class="form-control" id="companyName" name="company" value="<%= data.company || '' %>" placeholder="e.g. Stripe" required>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <label for="jobLocation">Location *</label>
+                      <input type="text" class="form-control" id="jobLocation" name="location" value="<%= data.location || '' %>" placeholder="e.g. San Francisco, CA or Remote" required>
+                    </div>
+                    <div class="col-md-3 form-group">
+                      <label for="workplaceType">Workplace Type</label>
+                      <select class="form-control" id="workplaceType" name="workplaceType">
+                        <option value="Remote" <%= data.workplaceType === 'Remote' ? 'selected' : '' %>>Remote</option>
+                        <option value="Hybrid" <%= data.workplaceType === 'Hybrid' ? 'selected' : '' %>>Hybrid</option>
+                        <option value="On-site" <%= data.workplaceType === 'On-site' ? 'selected' : '' %>>On-site</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 form-group">
+                      <label for="jobType">Employment Type</label>
+                      <select class="form-control" id="jobType" name="jobType">
+                        <option value="Full-time" <%= data.jobType === 'Full-time' ? 'selected' : '' %>>Full-time</option>
+                        <option value="Part-time" <%= data.jobType === 'Part-time' ? 'selected' : '' %>>Part-time</option>
+                        <option value="Contract" <%= data.jobType === 'Contract' ? 'selected' : '' %>>Contract</option>
+                        <option value="Internship" <%= data.jobType === 'Internship' ? 'selected' : '' %>>Internship</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-4 form-group">
+                      <label for="category">Category</label>
+                      <input type="text" class="form-control" id="category" name="category" value="<%= data.category || 'Product & Engineering' %>" placeholder="e.g. Product & Engineering">
+                    </div>
+                    <div class="col-md-4 form-group">
+                      <label for="experienceLevel">Experience Level</label>
+                      <select class="form-control" id="experienceLevel" name="experienceLevel">
+                        <option value="Senior" <%= data.experienceLevel === 'Senior' ? 'selected' : '' %>>Senior</option>
+                        <option value="Mid-level" <%= data.experienceLevel === 'Mid-level' ? 'selected' : '' %>>Mid-level</option>
+                        <option value="Lead" <%= data.experienceLevel === 'Lead' ? 'selected' : '' %>>Lead</option>
+                        <option value="Director" <%= data.experienceLevel === 'Director' ? 'selected' : '' %>>Director</option>
+                        <option value="Entry" <%= data.experienceLevel === 'Entry' ? 'selected' : '' %>>Entry</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                      <label for="status">Listing Status</label>
+                      <select class="form-control" id="status" name="status">
+                        <option value="active" <%= data.status === 'active' ? 'selected' : '' %>>Active</option>
+                        <option value="draft" <%= data.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                        <option value="closed" <%= data.status === 'closed' ? 'selected' : '' %>>Closed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-4 form-group">
+                      <label for="minSalary">Min Base Salary ($/yr)</label>
+                      <input type="number" class="form-control" id="minSalary" name="minSalary" value="<%= data.minSalary || 0 %>">
+                    </div>
+                    <div class="col-md-4 form-group">
+                      <label for="maxSalary">Max Base Salary ($/yr)</label>
+                      <input type="number" class="form-control" id="maxSalary" name="maxSalary" value="<%= data.maxSalary || 0 %>">
+                    </div>
+                    <div class="col-md-4 form-group">
+                      <label for="salaryText">Salary Display Text</label>
+                      <input type="text" class="form-control" id="salaryText" name="salaryText" value="<%= data.salaryText || '' %>">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="description">About the Role / Overview *</label>
+                    <textarea class="form-control" id="description" name="description" rows="4" required><%= data.description || '' %></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="requirements">Key Responsibilities & Qualifications (One per line)</label>
+                    <textarea class="form-control" id="requirements" name="requirements" rows="4"><%= Array.isArray(data.requirements) ? data.requirements.join('\n') : (data.requirements || '') %></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="skills">Skills & Tags (Comma separated)</label>
+                    <input type="text" class="form-control" id="skills" name="skills" value="<%= Array.isArray(data.skills) ? data.skills.join(', ') : (data.skills || '') %>">
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <label for="hiringManagerName">Hiring Manager Name</label>
+                      <input type="text" class="form-control" id="hiringManagerName" name="hiringManagerName" value="<%= (data.hiringManager && data.hiringManager.name) || '' %>">
+                    </div>
+                    <div class="col-md-6 form-group">
+                      <label for="hiringManagerRole">Hiring Manager Role</label>
+                      <input type="text" class="form-control" id="hiringManagerRole" name="hiringManagerRole" value="<%= (data.hiringManager && data.hiringManager.role) || '' %>">
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <% if (data.companyLogo) { %>
+                        <div class="mb-2">
+                          <img src="/<%= data.companyLogo.replace(/\\/g, '/') %>" alt="Company Logo" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; border: 1px solid #ddd;" onerror="this.style.display='none'">
+                        </div>
+                      <% } %>
+                      <label for="companyLogo">Change Company Logo</label>
+                      <div class="input-group">
+                        <div class="custom-file">
+                          <input type="file" class="custom-file-input" id="companyLogo" name="companyLogo">
+                          <label class="custom-file-label" for="companyLogo">Choose new logo</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6 form-group d-flex align-items-center pt-4">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="isFeatured" name="isFeatured" value="true" <%= data.isFeatured ? 'checked' : '' %>>
+                        <label class="custom-control-label" for="isFeatured">Mark as Featured Opportunity</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- /.card-body -->
+
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-success"><i class="fas fa-save mr-1"></i> Update Job</button>
+                  <a href="<%= generateUrl('job-list')%>" class="btn btn-default float-right">Cancel</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- /.content-wrapper -->
+  <%-include('../common/footer')%>
+</body>
+</html>
