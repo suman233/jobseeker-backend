@@ -10,6 +10,7 @@
 </head>
 
 <body>
+  <div id="toastNotification" data-toast="<%= typeof toast !== 'undefined' ? toast : '' %>" style="display: none;"></div>
   <main class="d-flex w-100">
     <div class="container d-flex flex-column">
       <div class="row vh-100">
@@ -43,9 +44,20 @@
   <script src="/jquery/jquery.min.js"></script>
   <script src="/plugins/toastr/toastr.min.js"></script>
   <script>
-    const messages = { "login-failed": ["error", "Invalid email or password."], logout: ["success", "You have signed out."] };
-    const notice = messages[<%- JSON.stringify(toast || "") %>];
-    if (notice) toastr[notice[0]](notice[1]);
+    (function () {
+      const messages = {
+        "login-failed": ["error", "Invalid email or password."],
+        logout: ["success", "You have signed out."],
+        "login-success": ["success", "Signed in successfully."]
+      };
+      const toastData = document.getElementById("toastNotification")?.dataset?.toast;
+      const toastParam = new URLSearchParams(window.location.search).get("toast");
+      const toastKey = toastData || toastParam;
+      const notice = messages[toastKey];
+      if (notice) {
+        toastr[notice[0]](notice[1]);
+      }
+    })();
   </script>
 </body>
 
