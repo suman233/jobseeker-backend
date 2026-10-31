@@ -43,3 +43,4 @@ namedRouter.delete("api-job-delete-alt", "/job-delete/:id", JobApiController.del
 namedRouter.get("api-job-delete-get", "/job-delete/:id", JobApiController.deleteJob);
 
 module.exports = router;
+
