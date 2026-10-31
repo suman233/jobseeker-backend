@@ -156,7 +156,7 @@
                       </div>
 
                       <!-- Live Image Preview Below Input -->
-                      <div id="logoPreviewContainer" class="mt-3">
+                      <div id="logoPreviewContainer" class="mt-3 <%= data.companyLogo ? '' : 'd-none' %>">
                         <p class="text-muted text-sm font-weight-bold mb-1" id="logoPreviewLabel">
                           <%= data.companyLogo ? 'Current Company Logo:' : 'Company Logo Preview:' %>
                         </p>
@@ -165,7 +165,7 @@
                             id="logoPreview"
                             src="<%= data.companyLogo ? getImageUrl(data.companyLogo, 'job') : '#' %>"
                             alt="Company Logo Preview"
-                            style="<%= data.companyLogo ? 'display:block;' : 'display:none;' %> max-width: 100px; max-height: 100px; object-fit: contain;"
+                            style="max-width: 100px; max-height: 100px; object-fit: contain; display: block;"
                             onerror="this.style.display='none'"
                           />
                         </div>
@@ -201,10 +201,15 @@
         const reader = new FileReader();
         reader.onload = function(evt) {
           const img = document.getElementById('logoPreview');
+          const container = document.getElementById('logoPreviewContainer');
           const lbl = document.getElementById('logoPreviewLabel');
           if (img) {
             img.src = evt.target.result;
             img.style.display = 'block';
+          }
+          if (container) {
+            container.classList.remove('d-none');
+            container.style.display = 'block';
           }
           if (lbl) {
             lbl.innerText = 'New Logo to be Saved:';
