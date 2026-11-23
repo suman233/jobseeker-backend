@@ -3,42 +3,41 @@ const dotenv = require("dotenv");
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 const nodemailer = require("nodemailer");
 
-const port = Number(process.env.EMAIL_PORT) || 587;
-const isGmail =
-  process.env.EMAIL_SERVICE === "gmail" ||
-  (process.env.EMAIL_HOST &&
-    process.env.EMAIL_HOST.toLowerCase().includes("gmail"));
+/**
+ * Creates a fresh Nodemailer Transporter instance
+ * Matches the requested createTransporter pattern
+ */
+const createTransporter = (options = {}) => {
+  const host = options.host || process.env.EMAIL_HOST || "smtp.gmail.com";
+  const port = options.port || Number(process.env.EMAIL_PORT) || 587;
+  const secure =
+    typeof options.secure !== "undefined"
+      ? options.secure
+      : process.env.EMAIL_SECURE === "true" ||
+        process.env.EMAIL_SECURE === true ||
+        port === 465;
 
-const transportOptions = isGmail
-  ? {
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-    }
-  : {
-      host: process.env.EMAIL_HOST || "smtp.gmail.com",
-      port: port,
-      secure: process.env.EMAIL_SECURE === "true" || port === 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-    };
+  const user = process.env.EMAIL_USER;
+  const pass = (process.env.EMAIL_PASS || "").trim();
 
-const transporter = nodemailer.createTransport(transportOptions);
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user,
+      pass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  });
+};
 
-module.exports = { transporter };
+module.exports = createTransporter;
+module.exports.createTransporter = createTransporter;
+// Backwards compatibility for existing imports expecting { transporter }
+module.exports.transporter = createTransporter();

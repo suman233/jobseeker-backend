@@ -1,4 +1,4 @@
-const { transporter } = require("../config/emailConfig");
+const createTransporter = require("../config/emailConfig");
 const { Resend } = require("resend");
 
 const escapeHtml = (value) =>
@@ -11,7 +11,7 @@ const escapeHtml = (value) =>
   }[char]));
 
 /**
- * Initialize Resend client dynamically using env var or configured API key
+ * Initialize Resend client dynamically using env var
  */
 const getResendClient = () => {
   const apiKey = process.env.RESEND_API_KEY;
@@ -21,15 +21,13 @@ const getResendClient = () => {
 const RESEND_ACCOUNT_OWNER = "suman98kundu@gmail.com";
 
 /**
- * Send Email via official Resend SDK (HTTPS Port 443)
- * Cloud hosts like Render never block HTTPS!
+ * Fallback via official Resend SDK (HTTPS Port 443)
  */
 const sendViaResend = async ({ from, to, subject, html, text }) => {
   const resend = getResendClient();
   if (!resend) return false;
 
-  let fromAddress = process.env.EMAIL_FROM || from || "onboarding@resend.dev";
-  // Resend requires onboarding@resend.dev or a custom verified domain
+  let fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
   if (
     !fromAddress ||
     fromAddress.includes("@gmail.com") ||
@@ -52,17 +50,13 @@ const sendViaResend = async ({ from, to, subject, html, text }) => {
     });
 
     if (error) {
-      console.warn("[RESEND SDK WARNING]", error);
-
-      // Handle Resend Free/Test Domain limitation:
-      // When using 'onboarding@resend.dev', Resend only allows sending to the account owner.
-      // If sending to an unverified recipient on Render, forward to the account owner with details.
+      console.warn("[EmailService:Resend Warning]", error.message);
       if (
         error.message &&
         error.message.includes("only send testing emails to your own email address")
       ) {
         console.log(
-          `[RESEND NOTE] Recipient ${toList.join(", ")} is not verified in Resend. Delivering to account owner (${RESEND_ACCOUNT_OWNER}) with target details.`
+          `[EmailService:Resend Note] Routing to account owner (${RESEND_ACCOUNT_OWNER}) for testing recipient ${toList.join(", ")}`
         );
         const fallbackRes = await resend.emails.send({
           from: "onboarding@resend.dev",
@@ -70,36 +64,124 @@ const sendViaResend = async ({ from, to, subject, html, text }) => {
           subject: `[For: ${toList.join(", ")}] ${subject}`,
           html:
             `<div style="padding:10px 16px;background:#fef3c7;border-left:4px solid #f59e0b;margin-bottom:16px;font-family:sans-serif;font-size:13px;color:#92400e;">
-              <strong>Resend Test Account Notice:</strong><br/>
-              This email was intended for <code>${escapeHtml(toList.join(", "))}</code>.<br/>
-              Because Resend's free <em>onboarding@resend.dev</em> domain restricts sending exclusively to the account owner (${RESEND_ACCOUNT_OWNER}), it was routed to your inbox.
-              To deliver directly to any user email, verify your custom domain at <a href="https://resend.com/domains" target="_blank">resend.com/domains</a>.
+              <strong>WorkSphere Notification:</strong><br/>
+              Intended for <code>${escapeHtml(toList.join(", "))}</code>.<br/>
             </div>` + html,
           text: `[Intended Recipient: ${toList.join(", ")}]\n\n${text}`,
         });
-
-        if (!fallbackRes.error) {
-          console.log(
-            `[RESEND SUCCESS] Forwarded to account owner ${RESEND_ACCOUNT_OWNER} (ID: ${fallbackRes.data?.id})`
-          );
-          return true;
-        }
+        return !fallbackRes.error;
       }
       return false;
     }
 
-    console.log(
-      `[RESEND SDK SUCCESS] Email delivered to ${toList.join(", ")} (ID: ${data?.id})`
+    console.info(
+      `[EmailService:Resend] Email delivered to ${toList.join(", ")} (ID: ${data?.id})`
     );
     return true;
   } catch (err) {
-    console.error("[RESEND SDK EXCEPTION]", err.message);
+    console.error("[EmailService:Resend Exception]", err.message);
     return false;
   }
 };
 
 /**
- * Send Registration / Credentials Email
+ * General Purpose Email Sender
+ * Adapts user's createTransporter & sendEmail architecture
+ */
+const sendEmail = async ({
+  to,
+  subject,
+  templateName,
+  context = {},
+  html: customHtml,
+  text: customText,
+  attachments,
+  fromLabel = "WorkSphere",
+}) => {
+  if (!to || !subject) {
+    throw new Error("Missing required email parameters: 'to' and 'subject' are required.");
+  }
+
+  const recipient = String(Array.isArray(to) ? to.join(", ") : to).trim();
+  const finalHtml = customHtml || "";
+  const finalText = customText || "";
+
+  if (!finalHtml && !finalText) {
+    throw new Error("Email template or HTML/text content is required.");
+  }
+
+  const fromAddress =
+    process.env.SMTP_FROM || process.env.EMAIL_USER || "suman98kundu@gmail.com";
+  const from = `"${fromLabel}" <${fromAddress}>`;
+
+  // 1. Primary Attempt: Nodemailer Transporter
+  try {
+    const transporter = createTransporter();
+    const info = await transporter.sendMail({
+      from,
+      to: recipient,
+      subject,
+      html: finalHtml,
+      text: finalText,
+      attachments,
+    });
+    console.info(
+      `[EmailService] Email successfully sent to ${recipient} (MessageId: ${info.messageId})`
+    );
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error(`[EmailService] Primary SMTP delivery failed: ${errorMessage}`);
+
+    // 2. Retry Attempt: Port 465 SSL (Unblocked on Render/cloud networks)
+    const currentPort = Number(process.env.EMAIL_PORT) || 587;
+    if (currentPort !== 465) {
+      try {
+        console.info(`[EmailService] Retrying delivery via Port 465 SSL...`);
+        const sslTransporter = createTransporter({
+          port: 465,
+          secure: true,
+        });
+        const sslInfo = await sslTransporter.sendMail({
+          from,
+          to: recipient,
+          subject,
+          html: finalHtml,
+          text: finalText,
+          attachments,
+        });
+        console.info(
+          `[EmailService] Email successfully sent via Port 465 SSL to ${recipient} (MessageId: ${sslInfo.messageId})`
+        );
+        return { success: true, messageId: sslInfo.messageId };
+      } catch (sslErr) {
+        console.error(
+          `[EmailService] Port 465 SSL retry failed: ${sslErr.message}`
+        );
+      }
+    }
+
+    // 3. Fallback Attempt: Resend HTTPS API (Works on Render when SMTP is blocked)
+    if (process.env.RESEND_API_KEY) {
+      console.info(`[EmailService] Attempting fallback via Resend API...`);
+      const resendSuccess = await sendViaResend({
+        from: fromAddress,
+        to: recipient,
+        subject,
+        html: finalHtml,
+        text: finalText,
+      });
+      if (resendSuccess) {
+        return { success: true, via: "resend" };
+      }
+    }
+
+    throw new Error(`Email delivery failed: ${errorMessage}`);
+  }
+};
+
+/**
+ * Send Registration Credentials Email
  */
 const sendMailRegistration = async (user, password) => {
   const loginUrl = `${(
@@ -107,42 +189,41 @@ const sendMailRegistration = async (user, password) => {
     `http://${process.env.HOST || "localhost"}:${process.env.PORT || 3002}`
   ).replace(/\/$/, "")}/login`;
 
-  const subject = "Your JobSeeker account details";
-  const text = `Hello ${user.name}, your account has been created. Sign in at ${loginUrl} with email ${user.email} and password ${password}`;
-  const html = `<p>Hello ${escapeHtml(user.name)},</p><p>Your account has been created.</p><p>Email: ${escapeHtml(user.email)}<br>Password: <strong>${escapeHtml(password)}</strong></p><p><a href="${escapeHtml(loginUrl)}">Sign in to User</a></p>`;
+  const subject = "Your WorkSphere Account Credentials";
+  const text = `Hello ${user.name},\n\nYour WorkSphere account has been created.\nSign in at: ${loginUrl}\nEmail: ${user.email}\nPassword: ${password}\n\nThank you,\nWorkSphere Team`;
+  const html = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #4f46e5; margin: 0; font-size: 22px; font-weight: 800;">WorkSphere</h2>
+        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Account Created Successfully</p>
+      </div>
+      <p style="color: #1e293b; font-size: 14px;">Hello <strong>${escapeHtml(user.name)}</strong>,</p>
+      <p style="color: #475569; font-size: 13px;">Your account has been registered. Here are your sign-in details:</p>
+      <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 18px 0; font-size: 13px;">
+        <p style="margin: 0 0 8px 0; color: #334155;"><strong>Email:</strong> ${escapeHtml(user.email)}</p>
+        <p style="margin: 0; color: #334155;"><strong>Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a; font-weight: bold;">${escapeHtml(password)}</code></p>
+      </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${escapeHtml(loginUrl)}" style="background: #4f46e5; color: #ffffff; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block;">Sign In to WorkSphere</a>
+      </div>
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;" />
+      <p style="color: #94a3b8; font-size: 11px; text-align: center; margin: 0;">&copy; ${new Date().getFullYear()} WorkSphere Portal. Please change your password after logging in.</p>
+    </div>
+  `;
 
-  const recipient = String(user.email).trim().toLowerCase();
-
-  // 1. If recipient is Resend account owner, Resend delivers instantly via HTTPS Port 443
-  if (recipient === RESEND_ACCOUNT_OWNER.toLowerCase()) {
-    const sent = await sendViaResend({ to: recipient, subject, html, text });
-    if (sent) return true;
-  }
-
-  // 2. Try Nodemailer SMTP (Works 100% on localhost to ANY recipient)
   try {
-    const fromAddress =
-      process.env.EMAIL_FROM || process.env.EMAIL_USER || "suman98kundu@gmail.com";
-    await transporter.sendMail({
-      from: fromAddress,
-      to: recipient,
+    await sendEmail({
+      to: user.email,
       subject,
-      text,
       html,
+      text,
+      fromLabel: "WorkSphere Admin",
     });
-    console.log(`[EMAIL-SMTP SUCCESS] Registration credentials sent directly to ${recipient}`);
     return true;
-  } catch (smtpError) {
-    console.warn(`[EMAIL-SMTP FAILED] (${smtpError.message}). Attempting Resend fallback...`);
+  } catch (err) {
+    console.error("[sendMailRegistration error]:", err.message);
+    return false;
   }
-
-  // 3. Fallback to Resend SDK (for Render / cloud deployments)
-  return await sendViaResend({
-    to: recipient,
-    subject,
-    html,
-    text,
-  });
 };
 
 /**
@@ -174,40 +255,22 @@ const sendOtpEmail = async (email, name, otp) => {
     `\n======================================================\n[VERIFICATION CODE] Email: ${email} | OTP: ${otp}\n======================================================\n`
   );
 
-  const recipient = String(email).trim().toLowerCase();
-
-  // 1. If recipient is Resend account owner, Resend delivers instantly via HTTPS Port 443
-  if (recipient === RESEND_ACCOUNT_OWNER.toLowerCase()) {
-    const sent = await sendViaResend({ to: recipient, subject, html, text });
-    if (sent) return true;
-  }
-
-  // 2. Try Nodemailer SMTP (Works 100% on localhost to ANY recipient)
   try {
-    const fromAddress =
-      process.env.EMAIL_FROM || process.env.EMAIL_USER || "suman98kundu@gmail.com";
-    await transporter.sendMail({
-      from: fromAddress,
-      to: recipient,
+    await sendEmail({
+      to: email,
       subject,
-      text,
       html,
+      text,
+      fromLabel: "WorkSphere",
     });
-    console.log(`[EMAIL-SMTP SUCCESS] OTP sent directly to ${recipient}`);
     return true;
-  } catch (smtpError) {
-    console.warn(`[EMAIL-SMTP FAILED] (${smtpError.message}). Attempting Resend fallback...`);
+  } catch (err) {
+    console.error("[sendOtpEmail error]:", err.message);
+    return false;
   }
-
-  // 3. Fallback to Resend SDK (for Render / cloud deployments)
-  return await sendViaResend({
-    to: recipient,
-    subject,
-    html,
-    text,
-  });
 };
 
-module.exports = sendMailRegistration;
+module.exports = sendEmail;
+module.exports.sendEmail = sendEmail;
 module.exports.sendMailRegistration = sendMailRegistration;
 module.exports.sendOtpEmail = sendOtpEmail;
