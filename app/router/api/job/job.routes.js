@@ -42,5 +42,11 @@ namedRouter.delete("api-job-delete", "/jobs/:id", JobApiController.deleteJob);
 namedRouter.delete("api-job-delete-alt", "/job-delete/:id", JobApiController.deleteJob);
 namedRouter.get("api-job-delete-get", "/job-delete/:id", JobApiController.deleteJob);
 
+// Job Application APIs (Candidate Apply & Applications List)
+namedRouter.post("api-jobs-apply", "/jobs/apply", JobApiController.applyJob);
+namedRouter.post("api-jobs-apply-alt", "/job-apply", JobApiController.applyJob);
+namedRouter.get("api-user-applications", "/user-applications", JobApiController.getUserApplications);
+namedRouter.get("api-user-applied-jobs", "/user/applied-jobs", JobApiController.getUserApplications);
+
 module.exports = router;
 

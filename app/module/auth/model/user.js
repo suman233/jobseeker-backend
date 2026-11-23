@@ -8,6 +8,11 @@ const UserValidationSchema = Joi.object({
   role: Joi.string().valid("admin", "employer", "jobSeeker").required(),
   password: Joi.string().min(6).required(),
   image: Joi.string().allow("").default(""),
+  phone: Joi.string().allow("").default(""),
+  headline: Joi.string().allow("").default(""),
+  location: Joi.string().allow("").default(""),
+  bio: Joi.string().allow("").default(""),
+  skills: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).default([]),
   frontendUser: Joi.boolean().default(false),
   isEmailVerified: Joi.boolean().default(false),
   otp: Joi.string().allow(null, "").default(null),
@@ -39,6 +44,30 @@ const userSchema = new Schema(
       type: String,
       enum: ["admin", "employer", "jobSeeker"],
       default: "jobSeeker",
+    },
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    headline: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    skills: {
+      type: [String],
+      default: [],
     },
     frontendUser: {
       type: Boolean,

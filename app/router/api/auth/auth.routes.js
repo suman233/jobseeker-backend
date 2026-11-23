@@ -25,6 +25,9 @@ namedRouter.get("api-user-detail-alt", "/user-details/:id", UserController.getUs
 
 namedRouter.put("api-user-update-put", "/users/:id", ImageUpload.single("image"), UserController.updateUser);
 namedRouter.post("api-user-update-post", "/user-update/:id", ImageUpload.single("image"), UserController.updateUser);
+namedRouter.put("api-user-profile-update-put", "/user-profile-update", ImageUpload.single("image"), UserController.updateUser);
+namedRouter.post("api-user-profile-update-post", "/user-profile-update", ImageUpload.single("image"), UserController.updateUser);
+namedRouter.post("api-user-update-profile-alt", "/user/update-profile", ImageUpload.single("image"), UserController.updateUser);
 
 namedRouter.delete("api-user-delete", "/users/:id", UserController.deleteUser);
 namedRouter.delete("api-user-delete-alt", "/user-delete/:id", UserController.deleteUser);

@@ -640,15 +640,60 @@ class UserController {
   }
 
   /**
-   * Update User API
+   * Update User / Candidate Profile API
+   * Supports admin updates, direct ID updates, and token-based self profile edits
    */
   async updateUser(req, res) {
     try {
-      const { id } = req.params;
-      const { name, email, role, isEmailVerified, password } = req.body;
+      let id = req.params.id || req.body.id || req.body.userId;
+      if (!id && req.headers.authorization) {
+        try {
+          const token = req.headers.authorization.replace(/^Bearer\s+/, "");
+          const decoded = jwt.verify(token, SECRET_KEY);
+          id = decoded._id;
+        } catch (jwtErr) {
+          // Token decode fallback
+        }
+      }
+
+      if (!id) {
+        return res.status(400).json({
+          status: false,
+          message: "User ID or authorization token required.",
+        });
+      }
+
+      const {
+        name,
+        email,
+        role,
+        isEmailVerified,
+        password,
+        phone,
+        headline,
+        location,
+        bio,
+        skills,
+      } = req.body;
 
       const updateData = {};
       if (name) updateData.name = String(name).trim();
+      if (phone !== undefined) updateData.phone = String(phone).trim();
+      if (headline !== undefined) updateData.headline = String(headline).trim();
+      if (location !== undefined) updateData.location = String(location).trim();
+      if (bio !== undefined) updateData.bio = String(bio).trim();
+
+      if (skills !== undefined) {
+        if (Array.isArray(skills)) {
+          updateData.skills = skills.map((s) => String(s).trim()).filter(Boolean);
+        } else if (typeof skills === "string") {
+          updateData.skills = skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+      }
+
       if (email) {
         const normalizedEmail = String(email).trim().toLowerCase();
         const existing = await UserModel.findOne({ email: normalizedEmail, _id: { $ne: id } });
@@ -685,14 +730,15 @@ class UserController {
 
       return res.status(200).json({
         status: true,
-        message: "User updated successfully.",
+        message: "User profile updated successfully.",
+        user: updatedUser,
         data: updatedUser,
       });
     } catch (err) {
       console.error("updateUser error:", err);
       return res.status(500).json({
         status: false,
-        message: "Failed to update user.",
+        message: "Failed to update user profile.",
         error: err.message,
       });
     }
