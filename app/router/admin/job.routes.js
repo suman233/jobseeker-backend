@@ -24,6 +24,8 @@ namedRouter.post(
   jobController.jobUpdate
 );
 namedRouter.get("job-delete", "/job-delete/:id", jobController.jobDelete);
+namedRouter.get("job-applicants", "/job-applicants/:id", jobController.jobApplicantsPage);
+namedRouter.post("job-applicant-status", "/job-applicant-status/:id", jobController.updateApplicationStatus);
 
 module.exports = router;
 

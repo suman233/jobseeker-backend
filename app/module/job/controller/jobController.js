@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const routerLabel = require("route-label");
 const { JobModel } = require("../model/job");
+const { ApplicationModel } = require("../model/application");
 const {
   getUploadedFileName,
   getUploadedFilePath,
@@ -13,7 +14,24 @@ class JobController {
   // Job List Page
   async jobListPage(req, res) {
     try {
-      const jobs = await JobModel.find().sort({ createdAt: -1 });
+      const jobs = await JobModel.find().sort({ createdAt: -1 }).lean();
+      
+      // Calculate real-time applicant counts per job
+      try {
+        const appCounts = await ApplicationModel.aggregate([
+          { $group: { _id: "$job", count: { $sum: 1 } } },
+        ]);
+        const countMap = {};
+        appCounts.forEach((c) => {
+          if (c._id) countMap[String(c._id)] = c.count;
+        });
+        jobs.forEach((job) => {
+          job.applicantCount = countMap[String(job._id)] || job.applicantCount || 0;
+        });
+      } catch (countErr) {
+        console.warn("Could not aggregate applicant counts:", countErr.message);
+      }
+
       res.render("job/list", {
         data: jobs,
         toast: req.query.toast || "",
@@ -22,6 +40,57 @@ class JobController {
     } catch (err) {
       console.error("jobListPage error:", err);
       res.render("job/list", { data: [], toast: "failed", getImageUrl });
+    }
+  }
+
+  // Job Applicants Page (Track who applied for this job)
+  async jobApplicantsPage(req, res) {
+    try {
+      const { id } = req.params;
+      const job = await JobModel.findById(id);
+      if (!job) {
+        return res.redirect(namedRouter.urlFor("job-list") + "?toast=not-found");
+      }
+
+      const applicants = await ApplicationModel.find({ job: id })
+        .populate("user")
+        .sort({ createdAt: -1 });
+
+      return res.render("job/applicants", {
+        job,
+        data: applicants,
+        toast: req.query.toast || "",
+        getImageUrl,
+      });
+    } catch (err) {
+      console.error("jobApplicantsPage error:", err);
+      return res.redirect(namedRouter.urlFor("job-list") + "?toast=failed");
+    }
+  }
+
+  // Update applicant status (e.g. Under Review, Interviewing, Offer, Rejected)
+  async updateApplicationStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { status, jobId } = req.body;
+      if (
+        ["Submitted", "Under Review", "Interviewing", "Offer", "Rejected"].includes(
+          status
+        )
+      ) {
+        await ApplicationModel.findByIdAndUpdate(id, { status });
+      }
+      const targetJobId = jobId || req.query.jobId;
+      if (targetJobId) {
+        return res.redirect(
+          namedRouter.urlFor("job-applicants", { id: targetJobId }) +
+            "?toast=status-updated"
+        );
+      }
+      return res.redirect(namedRouter.urlFor("job-list") + "?toast=status-updated");
+    } catch (err) {
+      console.error("updateApplicationStatus error:", err);
+      return res.redirect(namedRouter.urlFor("job-list") + "?toast=failed");
     }
   }
 

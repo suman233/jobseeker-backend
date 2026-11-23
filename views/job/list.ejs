@@ -89,8 +89,15 @@
                             </td>
                             <td>
                               <a
+                                href="<%= generateUrl('job-applicants', { id: item._id }) %>"
+                                class="btn btn-sm btn-info text-white"
+                                title="Track Job Applicants"
+                                ><i class="fas fa-users mr-1"></i> Applicants
+                                <span class="badge badge-light ml-1 font-weight-bold"><%= item.applicantCount || 0 %></span></a
+                              >
+                              <a
                                 href="<%= generateUrl('job-edit', { id: item._id }) %>"
-                                class="btn btn-sm btn-success"
+                                class="btn btn-sm btn-success ml-1"
                                 ><i class="fas fa-edit mr-1"></i> Update</a
                               >
                               <a

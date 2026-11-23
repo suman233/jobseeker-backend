@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%-include('../common/head')%>
+  <body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+      <!-- Navbar -->
+      <%-include('../common/navbar') %>
+      <!-- /.navbar -->
+
+      <!-- Main Sidebar Container -->
+      <%-include('../common/sidebar')%>
+
+      <!-- Content Wrapper. Contains page content -->
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <div class="container-fluid">
+            <div class="row mb-2">
+              <div class="col-sm-6">
+                <h1>Job Applicants</h1>
+              </div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                  <li class="breadcrumb-item"><a href="<%= generateUrl('job-list') %>">Jobs</a></li>
+                  <li class="breadcrumb-item active">Applicants</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+          <div class="container-fluid">
+            <!-- Job Summary Card -->
+            <div class="card card-outline card-primary mb-4">
+              <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <% const resolveJobImg = (typeof getImageUrl === 'function') ? getImageUrl : ((img) => (img ? ('/uploads/job/' + img.split('/').pop()) : '/dist/img/default-150x150.png')); %>
+                    <img src="<%= resolveJobImg(job.companyLogo, 'job') %>" alt="" style="width: 44px; height: 44px; object-fit: contain; border-radius: 8px; margin-right: 14px; border: 1px solid #dee2e6; padding: 3px;" onerror="this.onerror=null; this.src='/dist/img/default-150x150.png';">
+                    <div>
+                      <h4 class="mb-0 font-weight-bold text-dark"><%= job.title %></h4>
+                      <p class="mb-0 text-muted small">
+                        <strong><%= job.company %></strong> &bull; <%= job.location %> (<%= job.workplaceType %>) &bull; <span class="text-success font-weight-bold"><%= job.salaryText || 'Competitive' %></span>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-2 mt-md-0 d-flex align-items-center">
+                    <span class="badge badge-primary px-3 py-2 mr-3 font-weight-bold" style="font-size: 14px;">
+                      <i class="fas fa-users mr-1"></i> Total Applicants: <%= data.length %>
+                    </span>
+                    <a href="<%= generateUrl('job-list') %>" class="btn btn-secondary">
+                      <i class="fas fa-arrow-left mr-1"></i> Back to Jobs
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Applicants List Card -->
+            <div class="card">
+              <div class="card-header bg-white">
+                <h3 class="card-title font-weight-bold">
+                  <i class="fas fa-list mr-1 text-primary"></i> Registered Jobseeker Applications
+                </h3>
+              </div>
+              <div class="card-body">
+                <% if (!data || data.length === 0) { %>
+                  <div class="text-center py-5">
+                    <i class="fas fa-user-clock text-muted fa-3x mb-3"></i>
+                    <h5 class="text-muted font-weight-bold">No Candidates Have Applied Yet</h5>
+                    <p class="text-secondary small">As soon as jobseekers apply on the WorkSphere frontend, their applications and notes will appear here automatically.</p>
+                    <a href="<%= generateUrl('job-list') %>" class="btn btn-sm btn-outline-primary mt-2">
+                      <i class="fas fa-arrow-left mr-1"></i> Return to Job Opportunities
+                    </a>
+                  </div>
+                <% } else { %>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                      <thead class="thead-light">
+                        <tr>
+                          <th style="width: 50px;">Sl. No.</th>
+                          <th>Candidate Name</th>
+                          <th>Candidate Email</th>
+                          <th>Application Status</th>
+                          <th>Applied Date</th>
+                          <th>Candidate Note</th>
+                          <th style="width: 170px;">Update Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% const resolveUserImg = (typeof getImageUrl === 'function') ? getImageUrl : ((img) => (img ? ('/uploads/user/' + img.split('/').pop()) : '/dist/img/default-150x150.png')); %>
+                        <% let count = 1; %>
+                        <% for (let app of data) { %>
+                          <tr>
+                            <td><%= count %></td>
+                            <td>
+                              <div class="d-flex align-items-center">
+                                <img
+                                  src="<%= resolveUserImg(app.user ? app.user.image : '', 'user') %>"
+                                  alt=""
+                                  style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; margin-right: 8px; border: 1px solid #dee2e6;"
+                                  onerror="this.onerror=null; this.src='/dist/img/default-150x150.png';"
+                                >
+                                <div>
+                                  <strong><%= app.applicantName %></strong>
+                                  <% if (app.user && app.user.headline) { %>
+                                    <div class="text-muted small"><%= app.user.headline %></div>
+                                  <% } %>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <a href="mailto:<%= app.applicantEmail %>" class="text-primary">
+                                <i class="fas fa-envelope mr-1 text-muted"></i><%= app.applicantEmail %>
+                              </a>
+                            </td>
+                            <td>
+                              <% if (app.status === 'Submitted') { %>
+                                <span class="badge badge-info px-2 py-1" style="background-color: #17a2b8; color: #fff;">Submitted</span>
+                              <% } else if (app.status === 'Under Review') { %>
+                                <span class="badge badge-warning px-2 py-1" style="background-color: #ffc107; color: #212529;">Under Review</span>
+                              <% } else if (app.status === 'Interviewing') { %>
+                                <span class="badge badge-primary px-2 py-1" style="background-color: #6610f2; color: #fff;">Interviewing</span>
+                              <% } else if (app.status === 'Offer') { %>
+                                <span class="badge badge-success px-2 py-1" style="background-color: #28a745; color: #fff;">Offer</span>
+                              <% } else if (app.status === 'Rejected') { %>
+                                <span class="badge badge-danger px-2 py-1" style="background-color: #dc3545; color: #fff;">Rejected</span>
+                              <% } else { %>
+                                <span class="badge badge-secondary px-2 py-1"><%= app.status %></span>
+                              <% } %>
+                            </td>
+                            <td>
+                              <small class="text-muted">
+                                <i class="far fa-calendar-alt mr-1"></i>
+                                <%= app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently' %>
+                              </small>
+                            </td>
+                            <td>
+                              <% if (app.note && app.note.trim()) { %>
+                                <small class="text-dark font-italic">&ldquo;<%= app.note %>&rdquo;</small>
+                              <% } else { %>
+                                <small class="text-muted font-italic">No note attached (Fast Apply)</small>
+                              <% } %>
+                            </td>
+                            <td>
+                              <form action="<%= generateUrl('job-applicant-status', { id: app._id }) %>" method="POST" class="d-flex align-items-center">
+                                <input type="hidden" name="jobId" value="<%= job._id %>">
+                                <select name="status" class="form-control form-control-sm mr-1 font-weight-bold" style="font-size: 11px; padding: 2px 4px; height: 28px;">
+                                  <option value="Submitted" <%= app.status === 'Submitted' ? 'selected' : '' %>>Submitted</option>
+                                  <option value="Under Review" <%= app.status === 'Under Review' ? 'selected' : '' %>>Under Review</option>
+                                  <option value="Interviewing" <%= app.status === 'Interviewing' ? 'selected' : '' %>>Interviewing</option>
+                                  <option value="Offer" <%= app.status === 'Offer' ? 'selected' : '' %>>Offer</option>
+                                  <option value="Rejected" <%= app.status === 'Rejected' ? 'selected' : '' %>>Rejected</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary" style="height: 28px; padding: 2px 8px;" title="Save Status">
+                                  <i class="fas fa-check"></i>
+                                </button>
+                              </form>
+                            </td>
+                          </tr>
+                          <% count++; %>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <%-include('../common/footer')%>
+    </div>
+
+    <!-- Hidden Toast Notification -->
+    <div id="toastNotification" data-toast="<%= toast || '' %>" style="display: none;"></div>
+
+    <script>
+      $(function () {
+        var toastType = $('#toastNotification').data('toast');
+        if (toastType === 'status-updated') {
+          toastr.success('Applicant status updated successfully!');
+        } else if (toastType === 'failed') {
+          toastr.error('Operation failed. Please try again.');
+        }
+      });
+    </script>
+  </body>
+</html>

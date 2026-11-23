@@ -79,3 +79,4 @@ applicationSchema.index({ job: 1, user: 1 });
 
 const ApplicationModel = mongoose.model("application", applicationSchema);
 module.exports = { ApplicationModel };
+
